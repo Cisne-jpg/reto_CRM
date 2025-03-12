@@ -25,15 +25,15 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
         className="h-10 w-10 rounded-full object-cover mr-4"
       />
 
-      {/* Barra de búsqueda */}
+      {/* Barra de búsqueda centrada */}
       <input
         type="text"
         placeholder="Buscar..."
-        className="border border-gray-300 rounded px-2 py-1 text-black mr-4"
+        className="border border-gray-300 rounded px-2 py-1 text-black flex-grow max-w-md"
       />
 
-      {/* Ícono de usuario */}
-      <div className="bg-gray-300 w-8 h-8 rounded-full flex items-center justify-center text-white">
+      {/* Ícono de usuario alineado a la derecha */}
+      <div className="bg-gray-300 w-8 h-8 rounded-full flex items-center justify-center text-white ml-auto">
         U
       </div>
     </header>
