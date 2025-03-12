@@ -16,7 +16,14 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
       </button>
 
       {/* Logo o Título */}
-      <h1 className="font-bold text-lg mr-auto">DEALTRACK CRM</h1>
+      <h1 className="font-bold text-lg mr-4">DEALTRACK CRM</h1>
+
+      {/* Imagen */}
+      <img 
+        src="https://i.ibb.co/svQ1DTHd/IMG-4795.png" 
+        alt="Logo" 
+        className="h-10 w-10 rounded-full object-cover mr-4"
+      />
 
       {/* Barra de búsqueda */}
       <input
