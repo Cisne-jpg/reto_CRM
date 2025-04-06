@@ -48,12 +48,12 @@ export default function HomePage() {
     <h3 className="text-lg font-bold">¿Quieres unirte? // ¿Ya eres parte de nosotros?</h3>
     <div className="flex justify-center gap-4 mt-2">
       <button className="bg-gray-300 text-white px-4 py-2 rounded">
-        <Link href="/" className="text-black hover:underline justify-right">
+        <Link href="/Signup" className="text-black hover:underline justify-right">
         Crea tu cuenta
     </Link>
     </button>
       <button className="bg-gray-300 text-white px-4 py-2 rounded">
-      <Link href="/" className="text-black hover:underline justify-right">
+      <Link href="/Login" className="text-black hover:underline justify-right">
         Inicia sesion
     </Link>
         </button>
