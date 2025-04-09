@@ -1,11 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 
 
-const tags = [
-  "Mecanica", "Automotriz", "Herramientas", "Reparaciones",
-  "Motores", "Diagnostico", "Mantenimiento", "Afinacion"
-];
-
 export default function ProfileDashboard() {
   return (
     <div className="space-y-4 p-4">
