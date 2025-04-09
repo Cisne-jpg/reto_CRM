@@ -1,22 +1,39 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, ChangeEvent, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
+
+interface FormData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  birthDate: string;
+}
+
+interface InputProps {
+  label: string;
+  name: string;
+  type?: string;
+  value: string;
+  onChange: (e: ChangeEvent<HTMLInputElement>) => void;
+  error?: string;
+}
 
 export default function Signup() {
   const router = useRouter();
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     firstName: '',
     lastName: '',
     email: '',
     password: '',
     birthDate: '',
   });
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Validación del formulario
   const validateForm = () => {
-    const newErrors: any = {};
+    const newErrors: Record<string, string> = {};
     const { firstName, lastName, email, password, birthDate } = formData;
 
     if (!firstName.trim()) newErrors.firstName = 'El nombre es obligatorio';
@@ -34,18 +51,18 @@ export default function Signup() {
   };
 
   // Manejo de cambios en el formulario
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   // Enviar el formulario al backend
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
       console.log('Formulario válido:', formData);
 
       try {
-        const response = await fetch('http://localhost:3000/owners/signup', {
+        const response = await fetch('https://api-crm-livid.vercel.app/owners/signup', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -53,17 +70,15 @@ export default function Signup() {
           body: JSON.stringify({
             email: formData.email,
             password: formData.password,
-            name: formData.firstName + ' ' + formData.lastName,  // Concatenando el nombre y apellido
+            name: formData.firstName + ' ' + formData.lastName,
             dob: formData.birthDate,
           }),
         });
 
         const data = await response.json();
         if (response.ok) {
-          // Redirigir a login después de un registro exitoso
-          router.push('/login');
+          router.push('/Login');
         } else {
-          // Mostrar mensaje de error si ocurre un problema
           alert(data.message || 'Error en el registro');
         }
       } catch (error) {
@@ -90,11 +105,17 @@ export default function Signup() {
   );
 }
 
-function Input({ label, name, type = 'text', value, onChange, error }: any) {
+function Input({ label, name, type = 'text', value, onChange, error }: InputProps) {
   return (
     <div>
       <label className="block text-gray-700">{label}</label>
-      <input type={type} name={name} value={value} onChange={onChange} className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      <input
+        type={type}
+        name={name}
+        value={value}
+        onChange={onChange}
+        className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
       {error && <p className="text-red-500 text-sm">{error}</p>}
     </div>
   );

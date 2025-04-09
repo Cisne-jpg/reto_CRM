@@ -90,7 +90,7 @@ export default function Contactos() {
               onChange={(e) => setSearch(e.target.value)}
               style={{ flex: 1, padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
             />
-            <span role="img" aria-label="search">🔍</span>
+            <span role="image" aria-label="search">🔍</span>
           </div>
           {search && filteredSuggestions.length > 0 && (
             <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, backgroundColor: '#fff', border: '1px solid #ccc', borderRadius: '4px', marginTop: '0.5rem', zIndex: 10 }}>

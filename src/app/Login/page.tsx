@@ -7,8 +7,11 @@ export default function Login() {
   const router = useRouter();
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  const [success, setSuccess] = useState(false); // Para mostrar mensaje de éxito
-  const [errorMessage, setErrorMessage] = useState(''); // Mensaje de error de login
+  const [success, setSuccess] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  // URL base de tu API en producción
+  const API_URL = 'https://api-crm-livid.vercel.app';
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -30,37 +33,38 @@ export default function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSuccess(false); // Reinicia el estado de éxito
-    setErrorMessage(''); // Reinicia el mensaje de error
+    setSuccess(false);
+    setErrorMessage('');
 
-    if (validateForm()) {
-      try {
-        // Hacer el POST al backend para verificar las credenciales
-        const response = await fetch("http://localhost:3000/owners/login", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email: formData.email,
-            password: formData.password,
-          }),
-        });
+    if (!validateForm()) return;
 
-        if (!response.ok) {
-          const data = await response.json();
-          setErrorMessage(data.message || "Credenciales incorrectas");
-        } else {
-          const data = await response.json();
-          setSuccess(true);
-          // Redirigir a dashboard si login exitoso
-          setTimeout(() => {
-            router.push("/dashboard");
-          }, 2000);
-        }
-      } catch (error) {
-        setErrorMessage("Error en la conexión con el servidor");
+    try {
+      const response = await fetch(`${API_URL}/owners/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        // Mostrar mensaje de error que venga del backend o genérico
+        setErrorMessage(data.message || "Credenciales incorrectas");
+      } else {
+        setSuccess(true);
+        // Después de un momento, redirigir al dashboard
+        setTimeout(() => {
+          router.push("/dashboard");
+        }, 2000);
       }
+    } catch (error) {
+      console.error("Error en login:", error);
+      setErrorMessage("Error en la conexión con el servidor");
     }
   };
 
@@ -85,6 +89,7 @@ export default function Login() {
           <Input
             label="Correo"
             name="email"
+            type="email"
             value={formData.email}
             onChange={handleChange}
             error={errors.email}

@@ -22,7 +22,7 @@ const initialColumns: { [key: string]: Column } = {
   "column-4": { id: "column-4", title: "Esperando Confirmación", taskIds: [] },
 };
 
-export default function negocios() {
+export default function Negocios() {
   const [tasks, setTasks] = useState<{ [key: string]: Task }>(initialTasks);
   const [columns, setColumns] = useState<{ [key: string]: Column }>(initialColumns);
   const [newTaskContent, setNewTaskContent] = useState("");

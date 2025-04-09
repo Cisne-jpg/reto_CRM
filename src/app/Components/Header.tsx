@@ -1,4 +1,5 @@
 "use client";
+import Image from 'next/image';
 
 interface HeaderProps {
   onToggleSidebar: () => void;
@@ -19,11 +20,14 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
       <h1 className="font-bold text-lg mr-4">DEALTRACK CRM</h1>
 
       {/* Imagen */}
-      <img 
-        src="https://i.ibb.co/svQ1DTHd/IMG-4795.png" 
-        alt="Logo" 
-        className="h-10 w-10 rounded-full object-cover mr-4"
+      <Image 
+      src="https://i.ibb.co/svQ1DTHd/IMG-4795.png" 
+      alt="Logo" 
+      width={40}
+      height={40}
+      className="rounded-full object-cover mr-4"
       />
+
 
       {/* Ícono de usuario alineado a la derecha */}
       <div className="bg-gray-300 w-8 h-8 rounded-full flex items-center justify-center text-white ml-auto">

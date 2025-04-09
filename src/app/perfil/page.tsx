@@ -1,4 +1,4 @@
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 
 const tags = [
   "Mecanica", "Automotriz", "Herramientas", "Reparaciones",
