@@ -1,10 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 type Task = {
-  id: string;
-  content: string;
+  id: number;
+  titulo: string;
+  descripcion: string;
+  estado: string;
+  fecha_limite: string;
+  prioridad: string;
+  owner_id: number;
 };
 
 type Column = {
@@ -13,40 +18,130 @@ type Column = {
   taskIds: string[];
 };
 
-const initialTasks: { [key: string]: Task } = {}; // Inicialmente vacío
-
-const initialColumns: { [key: string]: Column } = {
-  "column-1": { id: "column-1", title: "Revision", taskIds: [] },
-  "column-2": { id: "column-2", title: "En contacto", taskIds: [] },
-  "column-3": { id: "column-3", title: "Toques finales", taskIds: [] },
-  "column-4": { id: "column-4", title: "Esperando Confirmación", taskIds: [] },
+// Mapeo para convertir la columna del front en el "estado" que se envía al backend
+const estadoForColumn: { [key: string]: string } = {
+  "column-1": "Revision",
+  "column-2": "En contacto",
+  "column-3": "Toques finales",
+  "column-4": "Esperando Confirmación",
 };
 
-export default function negocios() {
-  const [tasks, setTasks] = useState<{ [key: string]: Task }>(initialTasks);
-  const [columns, setColumns] = useState<{ [key: string]: Column }>(initialColumns);
+export default function Negocios() {
+  const [tasks, setTasks] = useState<{ [key: string]: Task }>({});
+  const [columns, setColumns] = useState<{ [key: string]: Column }>({
+    "column-1": { id: "column-1", title: "Revision", taskIds: [] },
+    "column-2": { id: "column-2", title: "En contacto", taskIds: [] },
+    "column-3": { id: "column-3", title: "Toques finales", taskIds: [] },
+    "column-4": { id: "column-4", title: "Esperando Confirmación", taskIds: [] },
+  });
   const [newTaskContent, setNewTaskContent] = useState("");
   const [selectedColumn, setSelectedColumn] = useState("column-1");
+  const [ownerId, setOwnerId] = useState<number | null>(null);
 
-  // Agregar una tarea nueva a la columna seleccionada
-  const addTask = () => {
-    if (!newTaskContent.trim()) return;
-    const id = "task-" + Date.now();
-    const newTask: Task = { id, content: newTaskContent };
-    setTasks((prev) => ({ ...prev, [id]: newTask }));
-    setColumns((prev) => {
-      const column = prev[selectedColumn];
-      return {
-        ...prev,
-        [selectedColumn]: { ...column, taskIds: [...column.taskIds, id] },
+  // Recupera el owner_id del usuario autenticado (asumimos que se guardó en localStorage)
+  useEffect(() => {
+    const storedOwnerId = localStorage.getItem("ownerId");
+    if (storedOwnerId) {
+      setOwnerId(parseInt(storedOwnerId, 10));
+      console.log("ownerId cargado:", parseInt(storedOwnerId, 10));
+    } else {
+      console.warn("No se encontró ownerId en localStorage");
+    }
+  }, []);
+  
+  
+
+  // Función para obtener las tareas del backend para el owner actual
+  const fetchKanbanItems = async () => {
+    if (!ownerId) return;
+    try {
+      const res = await fetch(`http://localhost:3000/kanban/${ownerId}`);
+      if (!res.ok) {
+        throw new Error("Error al obtener las tareas");
+      }
+      const data: Task[] = await res.json();
+      // Transformar el arreglo de tareas en un mapa y reconstruir las columnas basado en el estado
+      const tasksMap: { [key: string]: Task } = {};
+      const newColumns: { [key: string]: Column } = {
+        "column-1": { id: "column-1", title: "Revision", taskIds: [] },
+        "column-2": { id: "column-2", title: "En contacto", taskIds: [] },
+        "column-3": { id: "column-3", title: "Toques finales", taskIds: [] },
+        "column-4": { id: "column-4", title: "Esperando Confirmación", taskIds: [] },
       };
-    });
-    setNewTaskContent("");
+
+      data.forEach((task) => {
+        const taskKey = "task-" + task.id;
+        tasksMap[taskKey] = task;
+        // Determina a qué columna pertenece la tarea según su estado
+        const columnId = Object.entries(estadoForColumn).find(
+          ([colId, estado]) => estado === task.estado
+        )?.[0];
+
+        if (columnId) {
+          newColumns[columnId].taskIds.push(taskKey);
+        }
+      });
+
+      setTasks(tasksMap);
+      setColumns(newColumns);
+    } catch (error) {
+      console.error("fetchKanbanItems:", error);
+    }
   };
 
-  // Mover una tarea en dirección "forward" o "backward"
+  useEffect(() => {
+    if (ownerId) {
+      fetchKanbanItems();
+    }
+  }, [ownerId]);
+
+  // Función para agregar una nueva tarea, haciendo POST al backend
+  const addTask = async () => {
+    if (!newTaskContent.trim() || !ownerId) return;
+    try {
+      const response = await fetch("http://localhost:3000/kanban", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          titulo: newTaskContent,
+          descripcion: "", // Puedes ampliar esto
+          estado: estadoForColumn[selectedColumn],
+          fecha_limite: "2025-04-15", // Fija una fecha o toma de un input
+          prioridad: "media", // Valor por defecto
+          owner_id: ownerId,
+        }),
+      });
+      if (!response.ok) {
+        throw new Error("Error al agregar la tarea");
+      }
+      // Refrescar las tareas del backend
+      await fetchKanbanItems();
+      setNewTaskContent("");
+    } catch (error) {
+      console.error("addTask:", error);
+    }
+  };
+
+  // Función para eliminar una tarea usando el endpoint DELETE
+  const deleteTask = async (taskKey: string) => {
+    const task = tasks[taskKey];
+    try {
+      const response = await fetch(`http://localhost:3000/kanban/${task.id}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) {
+        throw new Error("Error al eliminar la tarea");
+      }
+      // Refrescar las tareas
+      await fetchKanbanItems();
+    } catch (error) {
+      console.error("deleteTask:", error);
+    }
+  };
+
+  // Función para mover una tarea localmente (sin persistencia en backend)
   const moveTask = (
-    taskId: string,
+    taskKey: string,
     fromColumnId: string,
     direction: "forward" | "backward"
   ) => {
@@ -58,33 +153,19 @@ export default function negocios() {
     } else if (direction === "backward" && currentIndex > 0) {
       newIndex = currentIndex - 1;
     }
-    if (newIndex === currentIndex) return; // No se puede mover fuera de límites
+    if (newIndex === currentIndex) return;
 
     const toColumnId = columnOrder[newIndex];
+
+    // Actualiza las columnas localmente
     setColumns((prev) => {
-      const newFromTaskIds = prev[fromColumnId].taskIds.filter((id) => id !== taskId);
-      const newToTaskIds = [...prev[toColumnId].taskIds, taskId];
+      const newFromTaskIds = prev[fromColumnId].taskIds.filter((id) => id !== taskKey);
+      const newToTaskIds = [...prev[toColumnId].taskIds, taskKey];
       return {
         ...prev,
         [fromColumnId]: { ...prev[fromColumnId], taskIds: newFromTaskIds },
         [toColumnId]: { ...prev[toColumnId], taskIds: newToTaskIds },
       };
-    });
-  };
-
-  // Función para eliminar una tarea
-  const deleteTask = (taskId: string, fromColumnId: string) => {
-    setColumns((prev) => {
-      const newTaskIds = prev[fromColumnId].taskIds.filter((id) => id !== taskId);
-      return {
-        ...prev,
-        [fromColumnId]: { ...prev[fromColumnId], taskIds: newTaskIds },
-      };
-    });
-    setTasks((prev) => {
-      const newTasks = { ...prev };
-      delete newTasks[taskId];
-      return newTasks;
     });
   };
 
@@ -125,25 +206,22 @@ export default function negocios() {
           <div key={column.id} className="flex-1 bg-white p-4 rounded shadow">
             <h2 className="text-xl font-semibold mb-4">{column.title}</h2>
             <div className="space-y-2">
-              {column.taskIds.map((taskId) => {
-                const task = tasks[taskId];
+              {column.taskIds.map((taskKey) => {
+                const task = tasks[taskKey];
                 return (
-                  <div
-                    key={task.id}
-                    className="p-2 bg-blue-50 rounded border border-blue-200"
-                  >
-                    <p>{task.content}</p>
+                  <div key={taskKey} className="p-2 bg-blue-50 rounded border border-blue-200">
+                    <p>{task.titulo}</p>
                     <div className="flex justify-between mt-2 text-sm">
                       <div className="flex gap-2">
                         <button
-                          onClick={() => moveTask(task.id, column.id, "backward")}
+                          onClick={() => moveTask(taskKey, column.id, "backward")}
                           className="text-blue-600 hover:underline disabled:text-gray-400"
                           disabled={column.id === "column-1"}
                         >
                           Atrás
                         </button>
                         <button
-                          onClick={() => moveTask(task.id, column.id, "forward")}
+                          onClick={() => moveTask(taskKey, column.id, "forward")}
                           className="text-blue-600 hover:underline disabled:text-gray-400"
                           disabled={column.id === "column-4"}
                         >
@@ -151,7 +229,7 @@ export default function negocios() {
                         </button>
                       </div>
                       <button
-                        onClick={() => deleteTask(task.id, column.id)}
+                        onClick={() => deleteTask(taskKey)}
                         className="text-red-600 hover:underline text-sm"
                       >
                         Eliminar

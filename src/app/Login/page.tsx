@@ -30,12 +30,11 @@ export default function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSuccess(false); // Reinicia el estado de éxito
-    setErrorMessage(''); // Reinicia el mensaje de error
-
+    setSuccess(false);
+    setErrorMessage("");
+  
     if (validateForm()) {
       try {
-        // Hacer el POST al backend para verificar las credenciales
         const response = await fetch("http://localhost:3000/owners/login", {
           method: "POST",
           headers: {
@@ -46,23 +45,38 @@ export default function Login() {
             password: formData.password,
           }),
         });
-
+  
+        const data = await response.json();
+        console.log("Respuesta API:", data); // Ver estructura aquí
+  
         if (!response.ok) {
-          const data = await response.json();
           setErrorMessage(data.message || "Credenciales incorrectas");
-        } else {
-          const data = await response.json();
+          return;
+        }
+  
+        // Modificación clave aquí ▼ (depende de la estructura real)
+        const ownerId = data.user?.OwnerID;
+
+        
+        console.log("OwnerID extraído:", ownerId); // Ver si llega
+  
+        if (ownerId) {
+          localStorage.setItem("ownerId", ownerId.toString());
           setSuccess(true);
-          // Redirigir a dashboard si login exitoso
           setTimeout(() => {
             router.push("/dashboard");
-          }, 2000);
+          }, 1000);
+        } else {
+          console.error("OwnerID no encontrado en:", data);
+          setErrorMessage("Error del servidor: ID no recibido");
         }
       } catch (error) {
         setErrorMessage("Error en la conexión con el servidor");
       }
     }
   };
+  
+  
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
