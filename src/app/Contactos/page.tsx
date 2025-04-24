@@ -1,118 +1,180 @@
-"use client"
-import React, { useState } from "react";
+"use client";
 
-interface Contact {
+import React, { useState, useEffect } from "react";
+
+// Tipado según el endpoint GET /api/contacts
+export interface Contact {
+  ContactID: number;
+  Name: string;
+  Email: string;
+  FotoPerfil: string;
+  OrganizationID: number;
+  OrganizationName: string;
+  Industry: string;
+}
+// Task del kanban
+interface KanbanTask {
   id: number;
-  name: string;
-  company: string;
-  contact: string;
-  role: string;
+  titulo: string;
+  estado: string;
 }
 
 interface ContactCardProps {
   contact: Contact;
-  onDelete: (id: number) => void;
+  onAddToKanban: (contact: Contact) => void;
+  alreadyAdded: boolean;
+  onDuplicate: (contact: Contact) => void;
 }
 
-const ContactCard: React.FC<ContactCardProps> = ({ contact, onDelete }) => (
-  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', marginBottom: '1rem', backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-      <div style={{ width: '64px', height: '64px', backgroundColor: '#4ade80', borderRadius: '9999px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '0.75rem', textAlign: 'center' }}>
-        Imagen de usuario
+const ContactCard: React.FC<ContactCardProps> = ({ contact, onAddToKanban, alreadyAdded, onDuplicate }) => {
+  const btnText = alreadyAdded ? "Ya agregado" : `Trato con ${contact.Name}`;
+  const btnClass = alreadyAdded ? "bg-gray-400 text-white py-2 px-4 rounded cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded transition";
+  const handleClick = () => {
+    if (alreadyAdded) onDuplicate(contact);
+    else onAddToKanban(contact);
+  };
+  return (
+    <div className="flex justify-between items-center p-4 mb-4 bg-white rounded-lg shadow">
+      <div className="flex items-center gap-4">
+        <img
+          src={contact.FotoPerfil}
+          alt="Foto de perfil"
+          className="w-16 h-16 rounded-full object-cover"
+        />
+        <div className="text-sm">
+          <p><strong>Nombre:</strong> {contact.Name}</p>
+          <p><strong>Email:</strong> {contact.Email}</p>
+          <p><strong>Organización:</strong> {contact.OrganizationName}</p>
+          <p><strong>Industria:</strong> {contact.Industry}</p>
+        </div>
       </div>
-      <div style={{ fontSize: '0.875rem' }}>
-        <p><strong>Nombre:</strong> {contact.name}
-        <strong>Empresa:</strong> {contact.company}</p>
-        <p><strong>Contacto:</strong> {contact.contact}</p>
-        <p><strong>Rol:</strong> {contact.role}</p>
-      </div>
+      <button
+        onClick={handleClick}
+        className={btnClass}
+        disabled={alreadyAdded}
+      >
+        {btnText}
+      </button>
     </div>
-    <div style={{ display: 'flex', gap: '0.5rem' }}>
-      <button onClick={() => onDelete(contact.id)} style={{ backgroundColor: '#dc2626', color: '#fff', border: 'none', padding: '0.5rem', borderRadius: '4px' }}>X</button>
-    </div>
-  </div>
-);
+  );
+};
 
 export default function Contactos() {
-  const [contacts, setContacts] = useState<Contact[]>([
-    { id: 1, name: "Juan Pérez", company: "Compañía X", contact: "juan@correo.com", role: "Vendedor" },
-    { id: 2, name: "María García", company: "Empresa Y", contact: "maria@correo.com", role: "Comprador" },
-  ]);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<string>("");
+  const [kanbanTitles, setKanbanTitles] = useState<string[]>([]);
 
-  const suggestedUsers: Contact[] = [
-    { id: 3, name: "Carlos López", company: "Empresa Z", contact: "carlos@correo.com", role: "Otro" },
-    { id: 4, name: "Ana Torres", company: "Comercial A", contact: "ana@correo.com", role: "Vendedor" },
-    { id: 5, name: "Luis Fernández", company: "Proveedor B", contact: "luis@correo.com", role: "Comprador" }
-  ];
+  // URL base dinámica
+  const API_BASE_URL =
+    process.env.NEXT_PUBLIC_API_URL ||
+    (typeof window !== "undefined" && window.location.hostname === "localhost"
+      ? "http://localhost:3000"
+      : "https://api-crm-livid.vercel.app");
 
-  const [searchVisible, setSearchVisible] = useState(false);
-  const [search, setSearch] = useState("");
-
-  const handleDelete = (id: number) => {
-    setContacts(contacts.filter((c) => c.id !== id));
-  };
-
-  const handleAdd = () => {
-    setSearchVisible(true);
-  };
-
-  const handleSelectSuggestion = (user: Contact) => {
-    if (!contacts.find(c => c.id === user.id)) {
-      setContacts([...contacts, user]);
+  useEffect(() => {
+    const ownerId = localStorage.getItem("ownerId");
+    if (!ownerId) {
+      setError("Usuario no autorizado");
+      setLoading(false);
+      return;
     }
-    setSearch("");
-    setSearchVisible(false);
+
+    const fetchAll = async () => {
+      try {
+        // Fetch contactos
+        const resC = await fetch(`${API_BASE_URL}/api/contacts`);
+        if (!resC.ok) throw new Error(`Error contacts ${resC.status}`);
+        const jsonC = await resC.json();
+        setContacts(jsonC.contacts);
+        // Fetch kanban tasks
+        const resK = await fetch(`${API_BASE_URL}/kanban/${ownerId}`);
+        if (!resK.ok) throw new Error(`Error kanban ${resK.status}`);
+        const jsonK: KanbanTask[] = await resK.json();
+        setKanbanTitles(jsonK.map(t => t.titulo));
+      } catch (err: any) {
+        console.error('Fetch error:', err);
+        setError('No se pudieron cargar los datos');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAll();
+  }, [API_BASE_URL]);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(""), 3000);
   };
 
-  const filteredSuggestions = suggestedUsers.filter(user =>
-    user.name.toLowerCase().includes(search.toLowerCase()) &&
-    !contacts.find(c => c.id === user.id)
-  );
+  const handleAddToKanban = async (contact: Contact) => {
+    try {
+      const ownerId = localStorage.getItem("ownerId");
+      if (!ownerId) throw new Error("OwnerID no encontrado");
+      const title = `Trato con ${contact.Name}`;
+      const body = JSON.stringify({
+        titulo: title,
+        descripcion: "",
+        estado: "Revision",
+        fecha_limite: new Date().toISOString().split('T')[0],
+        prioridad: "media",
+        owner_id: Number(ownerId)
+      });
+      const res = await fetch(`${API_BASE_URL}/kanban`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body,
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        console.error(`Kanban add failed ${res.status}:`, text);
+        showToast("No se pudo agregar al kanban");
+      } else {
+        // Actualizar estado local
+        setKanbanTitles(prev => [...prev, title]);
+        showToast(`Tarea '${title}' agregada al kanban`);
+      }
+    } catch (err: any) {
+      console.error('Add to kanban error:', err);
+      showToast('Error al agregar al kanban');
+    }
+  };
+
+  const handleDuplicate = (contact: Contact) => {
+    showToast(`Ya tienes el trato con ${contact.Name} en el kanban`);
+  };
+
+  if (loading) return <p className="p-4">Cargando datos...</p>;
+  if (error) return <p className="p-4 text-red-500">{error}</p>;
 
   return (
-    <div style={{ padding: '1rem', backgroundColor: '#bfdbfe', minHeight: '100vh' }}>
-      {!searchVisible && (
-        <button
-          onClick={handleAdd}
-          style={{ marginBottom: '1rem', padding: '0.5rem 1rem', backgroundColor: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px' }}
-        >
-          Agregar contacto
-        </button>
-      )}
-
-      {searchVisible && (
-        <div style={{ position: 'relative', marginBottom: '1rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <input
-              type="text"
-              placeholder="Buscar usuario para agregar..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              style={{ flex: 1, padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
-            />
-            <span role="img" aria-label="search">🔍</span>
-          </div>
-          {search && filteredSuggestions.length > 0 && (
-            <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, backgroundColor: '#fff', border: '1px solid #ccc', borderRadius: '4px', marginTop: '0.5rem', zIndex: 10 }}>
-              {filteredSuggestions.map((user) => (
-                <div
-                  key={user.id}
-                  onClick={() => handleSelectSuggestion(user)}
-                  style={{ padding: '0.5rem', cursor: 'pointer', borderBottom: '1px solid #eee' }}
-                >
-                  {user.name} - {user.company}
-                </div>
-              ))}
-            </div>
-          )}
+    <div className="p-4 bg-blue-200 min-h-screen relative">
+      {/* Toast emergente */}
+      {toastMessage && (
+        <div className="fixed top-4 right-4 bg-gray-800 text-white py-2 px-4 rounded-lg shadow-lg">
+          {toastMessage}
         </div>
       )}
 
-      <div style={{ maxHeight: '60vh', overflowY: 'auto', paddingRight: '1rem' }}>
-        {contacts.map((contact) => (
-          <ContactCard key={contact.id} contact={contact} onDelete={handleDelete} />
-        ))}
-      </div>
+      {/* Lista de contactos */}
+      {contacts.length === 0 ? (
+        <p>No hay contactos disponibles.</p>
+      ) : (
+        contacts.map((contact) => {
+          const title = `Trato con ${contact.Name}`;
+          const alreadyAdded = kanbanTitles.includes(title);
+          return (
+            <ContactCard
+              key={contact.ContactID}
+              contact={contact}
+              onAddToKanban={handleAddToKanban}
+              onDuplicate={handleDuplicate}
+              alreadyAdded={alreadyAdded}
+            />
+          );
+        })
+      )}
     </div>
   );
 }

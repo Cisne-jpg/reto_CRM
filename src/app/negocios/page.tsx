@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState, useEffect } from "react";
 
@@ -23,7 +23,7 @@ const estadoForColumn: { [key: string]: string } = {
   "column-1": "Revision",
   "column-2": "En contacto",
   "column-3": "Toques finales",
-  "column-4": "Esperando Confirmación", // <- sin tilde
+  "column-4": "Esperando Confirmación",
 };
 
 export default function Negocios() {
@@ -38,6 +38,13 @@ export default function Negocios() {
   const [selectedColumn, setSelectedColumn] = useState("column-1");
   const [ownerId, setOwnerId] = useState<number | null>(null);
 
+  // URL base para la API: en dev localhost, en prod Vercel o variable NEXT_PUBLIC_API_URL
+  const API_BASE_URL =
+    process.env.NEXT_PUBLIC_API_URL ||
+    (typeof window !== 'undefined' && window.location.hostname === 'localhost'
+      ? 'http://localhost:3000'
+      : 'https://api-crm-livid.vercel.app');
+
   useEffect(() => {
     const stored = localStorage.getItem("ownerId");
     if (stored) setOwnerId(Number(stored));
@@ -46,7 +53,7 @@ export default function Negocios() {
   const fetchKanbanItems = async () => {
     if (!ownerId) return;
     try {
-      const res = await fetch(`http://localhost:3000/kanban/${ownerId}`);
+      const res = await fetch(`${API_BASE_URL}/kanban/${ownerId}`);
       if (!res.ok) throw new Error(`Fetch failed ${res.status}`);
       const data: Task[] = await res.json();
 
@@ -88,7 +95,7 @@ export default function Negocios() {
         prioridad: "media",
         owner_id: ownerId,
       });
-      const res = await fetch(`http://localhost:3000/kanban`, {
+      const res = await fetch(`${API_BASE_URL}/kanban`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body,
@@ -108,7 +115,7 @@ export default function Negocios() {
   const deleteTask = async (taskKey: string) => {
     const task = tasks[taskKey];
     try {
-      const res = await fetch(`http://localhost:3000/kanban/${task.id}`, { method: "DELETE" });
+      const res = await fetch(`${API_BASE_URL}/kanban/${task.id}`, { method: "DELETE" });
       if (!res.ok) throw new Error(`delete failed ${res.status}`);
       await fetchKanbanItems();
     } catch (err) {
@@ -118,7 +125,7 @@ export default function Negocios() {
 
   const updateTaskState = async (taskId: number, newEstado: string) => {
     try {
-      const res = await fetch(`http://localhost:3000/kanban/${taskId}`, {
+      const res = await fetch(`${API_BASE_URL}/kanban/${taskId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ estado: newEstado }),

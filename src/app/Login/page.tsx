@@ -7,8 +7,15 @@ export default function Login() {
   const router = useRouter();
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  const [success, setSuccess] = useState(false); // Para mostrar mensaje de éxito
-  const [errorMessage, setErrorMessage] = useState(''); // Mensaje de error de login
+  const [success, setSuccess] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  // URL base dinámica: usa la variable de entorno o detecta localhost
+  const API_BASE_URL =
+    process.env.NEXT_PUBLIC_API_URL ||
+    (typeof window !== "undefined" && window.location.hostname === "localhost"
+      ? "http://localhost:3000"
+      : "https://api-crm-livid.vercel.app");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -16,14 +23,12 @@ export default function Login() {
 
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
-
     if (!formData.email.includes("@")) {
       newErrors.email = "Correo inválido";
     }
     if (formData.password.length < 6) {
       newErrors.password = "La contraseña debe tener al menos 6 caracteres";
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -32,56 +37,58 @@ export default function Login() {
     e.preventDefault();
     setSuccess(false);
     setErrorMessage("");
-  
-    if (validateForm()) {
-      try {
-        const response = await fetch("http://localhost:3000/owners/login", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email: formData.email,
-            password: formData.password,
-          }),
-        });
-  
-        const data = await response.json();
-        console.log("Respuesta API:", data); // Ver estructura aquí
-  
-        if (!response.ok) {
-          setErrorMessage(data.message || "Credenciales incorrectas");
-          return;
-        }
-  
-        // Modificación clave aquí ▼ (depende de la estructura real)
-        const ownerId = data.user?.OwnerID;
 
-        
-        console.log("OwnerID extraído:", ownerId); // Ver si llega
-  
-        if (ownerId) {
-          localStorage.setItem("ownerId", ownerId.toString());
-          setSuccess(true);
-          setTimeout(() => {
-            router.push("/dashboard");
-          }, 1000);
-        } else {
-          console.error("OwnerID no encontrado en:", data);
-          setErrorMessage("Error del servidor: ID no recibido");
-        }
-      } catch (error) {
-        setErrorMessage("Error en la conexión con el servidor");
+    if (!validateForm()) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/owners/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
+
+      const data = await response.json();
+      console.log("Respuesta API:", data);
+
+      if (!response.ok) {
+        setErrorMessage(data.message || "Credenciales incorrectas");
+        return;
       }
+
+      // Extrae y guarda OwnerID y OwnerName
+      const ownerId = data.user?.OwnerID;
+      const ownerName = data.user?.Name || data.user?.name;
+      console.log("OwnerID extraído:", ownerId);
+      console.log("OwnerName extraído:", ownerName);
+
+      if (ownerId) {
+        localStorage.setItem("ownerId", ownerId.toString());
+        if (ownerName) {
+          localStorage.setItem("ownerName", ownerName);
+        }
+        setSuccess(true);
+        setTimeout(() => {
+          router.push("/dashboard");
+        }, 1000);
+      } else {
+        console.error("OwnerID no encontrado en:", data);
+        setErrorMessage("Error del servidor: ID no recibido");
+      }
+    } catch (error) {
+      console.error("Error en la conexión con el servidor:", error);
+      setErrorMessage("No se pudo conectar con el servidor");
     }
   };
-  
-  
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="bg-white p-8 rounded-lg shadow-md w-96">
-        <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Iniciar Sesión</h2>
+        <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
+          Iniciar Sesión
+        </h2>
 
         {success && (
           <div className="bg-green-100 text-green-800 p-3 rounded mb-4 text-center">
