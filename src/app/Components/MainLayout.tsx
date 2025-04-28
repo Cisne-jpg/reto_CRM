@@ -14,9 +14,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const toggleSidebar = () => setIsOpen(!isOpen);
 
   // Listas de rutas donde se oculta cada componente
-  const hideNavBarRoutes = ["/login", "/"];
-  const hideHeaderRoutes = ["/login"];
-  const hideFooterRoutes = ["/login"];
+  const hideNavBarRoutes = ["/login", "/", "/Signup"];
+  const hideHeaderRoutes = ["/login", "/signup"];
+  const hideFooterRoutes = ["/logins"];
 
   // Verificamos si debemos mostrar cada componente
   const showNavBar = !hideNavBarRoutes.includes(pathname);
