@@ -10,7 +10,9 @@ export default function Login() {
   const [errorMessage, setErrorMessage] = useState("");
 
   // ✅ Usa solamente la variable de entorno
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || (typeof window !== "undefined" && window.location.hostname === "localhost"
+    ? "http://localhost:3000"
+    : "https://api-crm-livid.vercel.app");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -55,6 +57,8 @@ export default function Login() {
 
       const ownerId = data.user?.OwnerID;
       const ownerName = data.user?.Name || data.user?.name;
+      console.log("OwnerID extraído:", ownerId);
+      console.log("OwnerName extraído:", ownerName);
 
       if (ownerId) {
         localStorage.setItem("ownerId", ownerId.toString());
