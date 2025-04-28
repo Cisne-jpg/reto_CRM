@@ -16,7 +16,7 @@ export default function HomePage() {
               />
             </div>
             <h1 className="text-4xl font-bold mt-8 mb-4">DealTrack CRM</h1>
-            <p className="text-xl opacity-90">Transformando la gestión comercial moderna</p>
+            <p className="text-italic text-xl">TRANSFORMANDO LA GESTIÓN COMERCIAL MODERNA</p>
           </div>
         </div>
       </section>

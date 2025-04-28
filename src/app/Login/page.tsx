@@ -163,13 +163,6 @@ export default function Login() {
               Acceder
             </button>
           </form>
-
-          {/* Enlace olvidé contraseña */}
-          <div className="mt-6 text-center">
-            <a href="#" className="text-sm text-blue-600 hover:text-blue-800 transition-colors">
-              ¿Olvidaste tu contraseña?
-            </a>
-          </div>
         </div>
       </div>
     </div>

@@ -1,42 +1,70 @@
-"use client";
+// MainLayout.tsx
+'use client';
 
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import NavBar from "./NavBar";
 import Header from "./Header";
 import Footer from "./Footer";
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const [isMounted, setIsMounted] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [ownerName, setOwnerName] = useState<string | null>(null);
 
-  // Estado para la sidebar
-  const [isOpen, setIsOpen] = useState(true);
-  const toggleSidebar = () => setIsOpen(!isOpen);
+  // Carga inicial
+  useEffect(() => {
+    setIsMounted(true);
+    const storedName = localStorage.getItem("ownerName");
+    setOwnerName(storedName);
+    setIsSidebarOpen(
+      !!storedName && !["/login", "/", "/Signup"].includes(pathname)
+    );
+  }, [pathname]);
 
-  // Listas de rutas donde se oculta cada componente
-  const hideNavBarRoutes = ["/login", "/", "/Signup"];
-  const hideHeaderRoutes = ["/login", "/signup"];
-  const hideFooterRoutes = ["/logins"];
+  const hideComponents = ["/login", "/", "/Signup"].includes(pathname);
+  const showHeaderNavbar = !!ownerName && !hideComponents;
 
-  // Verificamos si debemos mostrar cada componente
-  const showNavBar = !hideNavBarRoutes.includes(pathname);
-  const showHeader = !hideHeaderRoutes.includes(pathname);
-  const showFooter = !hideFooterRoutes.includes(pathname);
+  if (!isMounted) return null;
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
-      {/* Si showNavBar es true y isOpen es true, mostramos NavBar */}
-      {showNavBar && isOpen && <NavBar />}
-
-      <div className="flex-1 flex flex-col">
-        {/* Header */}
-        {showHeader && <Header onToggleSidebar={toggleSidebar} />}
+    <div className="min-h-screen bg-gray-100 flex flex-col">
+      <div className="flex flex-1">
+        {/* NavBar lateral */}
+        {showHeaderNavbar && (
+          <aside
+            className={`fixed inset-y-0 left-0 z-40 w-64 transform transition-transform duration-300 ease-in-out ${
+              isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+            }`}
+          >
+            <NavBar />
+          </aside>
+        )}
 
         {/* Contenido principal */}
-        <main className="flex-1 p-4 text-black">{children}</main>
+        <div
+          className={`flex-1 flex flex-col transition-all duration-300 ease-in-out ${
+            showHeaderNavbar && isSidebarOpen ? 'ml-64' : 'ml-0'
+          }`}
+        >
+          {/* Header */}
+          {showHeaderNavbar && (
+            <Header
+              onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
+              isSidebarOpen={isSidebarOpen}
+              ownerName={ownerName}
+            />
+          )}
 
-        {/* Footer */}
-        {showFooter && <Footer />}
+          {/* Main */}
+          <main className="flex-1 p-4 md:p-8">
+            {children}
+          </main>
+
+          {/* Footer */}
+          {!hideComponents && <Footer />}
+        </div>
       </div>
     </div>
   );

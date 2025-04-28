@@ -1,63 +1,45 @@
+// Header.tsx
 'use client';
-
-import { useState, useEffect } from "react";
 
 interface HeaderProps {
   onToggleSidebar: () => void;
+  isSidebarOpen: boolean;
+  ownerName: string | null;
 }
 
-export default function Header({ onToggleSidebar }: HeaderProps) {
-  const [ownerName, setOwnerName] = useState<string | null>(null);
-
-  useEffect(() => {
-    // Leer el nombre almacenado tras el login
-    const storedName = localStorage.getItem("ownerName");
-    if (storedName) {
-      setOwnerName(storedName);
-    }
-
-    // Escuchamos el evento de logout para limpiar el estado
-    const handleLogout = () => setOwnerName(null);
-    window.addEventListener("logout", handleLogout);
-    return () => window.removeEventListener("logout", handleLogout);
-  }, []);
-
-  // Inicial para el avatar (fallback 'U')
-  const initial = ownerName ? ownerName.charAt(0).toUpperCase() : '';
+export default function Header({ onToggleSidebar, isSidebarOpen, ownerName }: HeaderProps) {
+  const initial = ownerName?.charAt(0).toUpperCase() || '';
 
   return (
-    <header className="h-16 bg-white flex items-center px-4 shadow text-black">
-      {/* Botón hamburguesa: solo si hay sesión iniciada */}
-      {ownerName && (
-        <button
-          className="mr-4 text-gray-700 hover:text-gray-900"
-          onClick={onToggleSidebar}
-        >
-          &#9776;
-        </button>
-      )}
+    <header className="sticky top-0 z-50 flex items-center h-16 bg-white px-4 shadow-md">
+      {/* Botón abrir/cerrar */}
+      <button
+        onClick={onToggleSidebar}
+        className="z-50 p-2 mr-4 rounded-lg hover:bg-gray-100 focus:outline-none transition-transform duration-300 ease-in-out"
+      >
+        {isSidebarOpen ? (
+          // Icono X
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        ) : (
+          // Icono hamburguesa
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        )}
+      </button>
 
-      {/* Logo o Título */}
-      <h1 className="font-bold text-lg mr-4">DEALTRACK CRM</h1>
+      {/* Logo / Título fijo a la izquierda */}
+      <h1 className="text-xl font-semibold">DEALTRACK CRM</h1>
 
-      {/* Imagen fija del logo */}
-      <img
-        src="https://i.ibb.co/svQ1DTHd/IMG-4795.png"
-        alt="Logo"
-        className="h-10 w-10 rounded-full object-cover mr-4"
-      />
-
-      {/* Bloque de bienvenida y avatar: solo si hay sesión */}
-      {ownerName && (
-        <div className="ml-auto flex items-center space-x-4">
-          <p className="text-gray-700">
-            <span className="font-semibold">{ownerName}</span>
-          </p>
-          <div className="bg-gray-300 w-8 h-8 rounded-full flex items-center justify-center text-white">
-            {initial}
-          </div>
+      {/* Empuja lo siguiente a la derecha */}
+      <div className="ml-auto flex items-center space-x-3">
+        {ownerName && <span className="text-gray-700">{ownerName}</span>}
+        <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white">
+          {initial}
         </div>
-      )}
+      </div>
     </header>
-  );
+);
 }
