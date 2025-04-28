@@ -1,7 +1,8 @@
-"use client";
+'use client';
 
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { useRouter } from "next/navigation";
 
 interface Profile {
   OwnerID: number;
@@ -18,9 +19,20 @@ const tags = [
 ];
 
 export default function ProfileDashboard() {
+  const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const handleLogout = () => {
+    localStorage.removeItem("ownerId");
+    localStorage.removeItem("ownerName");
+    localStorage.removeItem("authToken");
++   // Avisamos al header que hubo logout
++   window.dispatchEvent(new Event("logout"));
+    router.push("/");
+-   router.refresh();
+  };
 
   // URL base dinámica
   const API_BASE_URL =
@@ -58,30 +70,48 @@ export default function ProfileDashboard() {
 
   return (
     <div className="max-w-2xl mx-auto p-4">
-      <div className="flex items-center space-x-4">
-        <div className="w-20 h-20 rounded-full border bg-gray-100 overflow-hidden">
-          {profile.ProfilePhoto ? (
-            <img
-              src={profile.ProfilePhoto}
-              alt="Foto de perfil"
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <span className="flex items-center justify-center h-full text-gray-500">?
-            </span>
-          )}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center space-x-4">
+          <div className="w-20 h-20 rounded-full border bg-gray-100 overflow-hidden">
+            {profile.ProfilePhoto ? (
+              <img
+                src={profile.ProfilePhoto}
+                alt="Foto de perfil"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span className="flex items-center justify-center h-full text-gray-500">?</span>
+            )}
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold">{profile.Name}</h2>
+            <p className="text-gray-500">{profile.Email}</p>
+            <p className="text-gray-600 mt-1">
+              {profile.Descrip || "Agrega una descripción a tu perfil."}
+            </p>
+          </div>
         </div>
-        <div>
-          <h2 className="text-lg font-semibold">{profile.Name}</h2>
-          <p className="text-gray-500">{profile.Email}</p>
-          <p className="text-gray-600 mt-1">{profile.Descrip || "Agrega una descripción a tu perfil."}</p>
-        </div>
+        {/* Botón de Cerrar sesión con nuevos estilos */}
+        <button
+          onClick={handleLogout}
+          className="
+            bg-red-500 
+            text-black 
+            px-4 py-2 
+            rounded 
+            hover:cursor-pointer 
+            transition-colors 
+            duration-150
+          "
+        >
+          Cerrar sesión
+        </button>
       </div>
-      
+
       <Card className="bg-blue-100 mt-4 p-4 h-52 flex items-center justify-center text-gray-600">
         Placeholder Gráfica
       </Card>
-      
+
       <Card className="bg-blue-100 mt-4 p-4">
         <h3 className="text-lg font-semibold">Etiquetas identificadoras</h3>
         <div className="flex flex-wrap gap-2 mt-2">

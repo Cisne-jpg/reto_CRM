@@ -15,42 +15,49 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
     if (storedName) {
       setOwnerName(storedName);
     }
+
+    // Escuchamos el evento de logout para limpiar el estado
+    const handleLogout = () => setOwnerName(null);
+    window.addEventListener("logout", handleLogout);
+    return () => window.removeEventListener("logout", handleLogout);
   }, []);
 
   // Inicial para el avatar (fallback 'U')
-  const initial = ownerName ? ownerName.charAt(0).toUpperCase() : 'U';
+  const initial = ownerName ? ownerName.charAt(0).toUpperCase() : '';
 
   return (
     <header className="h-16 bg-white flex items-center px-4 shadow text-black">
-      {/* Botón hamburguesa */}
-      <button
-        className="mr-4 text-gray-700 hover:text-gray-900"
-        onClick={onToggleSidebar}
-      >
-        &#9776;
-      </button>
+      {/* Botón hamburguesa: solo si hay sesión iniciada */}
+      {ownerName && (
+        <button
+          className="mr-4 text-gray-700 hover:text-gray-900"
+          onClick={onToggleSidebar}
+        >
+          &#9776;
+        </button>
+      )}
 
       {/* Logo o Título */}
       <h1 className="font-bold text-lg mr-4">DEALTRACK CRM</h1>
 
-      {/* Imagen */}
+      {/* Imagen fija del logo */}
       <img
         src="https://i.ibb.co/svQ1DTHd/IMG-4795.png"
         alt="Logo"
         className="h-10 w-10 rounded-full object-cover mr-4"
       />
 
-      {/* Bloque de bienvenida y avatar */}
-      <div className="ml-auto flex items-center space-x-4">
-        {ownerName && (
+      {/* Bloque de bienvenida y avatar: solo si hay sesión */}
+      {ownerName && (
+        <div className="ml-auto flex items-center space-x-4">
           <p className="text-gray-700">
             Bienvenido/a, <span className="font-semibold">{ownerName}</span>!
           </p>
-        )}
-        <div className="bg-gray-300 w-8 h-8 rounded-full flex items-center justify-center text-white">
-          {initial}
+          <div className="bg-gray-300 w-8 h-8 rounded-full flex items-center justify-center text-white">
+            {initial}
+          </div>
         </div>
-      </div>
+      )}
     </header>
   );
 }
