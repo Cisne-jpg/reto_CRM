@@ -372,7 +372,8 @@ const fetchKanbanItems = async () => {
                             {new Date(task.fecha_limite).toLocaleDateString('es-ES', {
                               day: '2-digit',
                               month: 'short',
-                              year: 'numeric'
+                              year: 'numeric',
+                              timeZone: 'UTC'
                             })}
                           </span>
                         </div>

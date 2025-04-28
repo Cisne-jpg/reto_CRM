@@ -19,6 +19,7 @@ export default function ProfileDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [newDescription, setNewDescription] = useState<string>("");
+  const [descError, setDescError] = useState<string | null>(null);
   const [userTags, setUserTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState<string>("");
   const [tagError, setTagError] = useState<string | null>(null);
@@ -50,9 +51,7 @@ export default function ProfileDashboard() {
 
     if (!res.ok) throw new Error(`Error ${res.status}`);
     const json = await res.json();
-    // API returns { success: boolean, data: OwnerProfile }
     const data = json.data;
-    // Map Etiquetas to Tags if necessary
     if (data.Etiquetas) {
       data.Tags = data.Etiquetas;
       delete data.Etiquetas;
@@ -93,15 +92,24 @@ export default function ProfileDashboard() {
     })();
   }, []);
 
-  // Update description
+  // Handlers
+  const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const val = e.target.value;
+    if (val.length > 500) {
+      setDescError('La descripción no puede exceder 500 caracteres');
+    } else {
+      setDescError(null);
+    }
+    setNewDescription(val);
+  };
+
   const handleUpdateProfile = async () => {
-    if (!profile) return;
+    if (!profile || descError) return;
     setSaving(true);
     const ownerId = localStorage.getItem("ownerId");
     if (!ownerId) return;
 
     try {
-      // Send correct field name 'description'
       const data = await fetchJson(
         `/profile/${ownerId}/description`,
         {
@@ -122,10 +130,8 @@ export default function ProfileDashboard() {
     }
   };
 
-  // Add tag
   const handleAddTag = async () => {
     const tag = newTag.trim();
-    // Duplicate check
     if (!tag) return;
     if (userTags.includes(tag)) {
       setTagError("Etiqueta duplicada");
@@ -154,7 +160,6 @@ export default function ProfileDashboard() {
     }
   };
 
-  // Remove tag
   const handleRemoveTag = async (tagToRemove: string) => {
     const ownerId = localStorage.getItem("ownerId");
     if (!ownerId) return;
@@ -182,86 +187,104 @@ export default function ProfileDashboard() {
     return <p className="p-4 text-red-500">{error || "Perfil no encontrado"}</p>;
 
   return (
-    <div className="max-w-2xl mx-auto p-4">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center space-x-4">
-          <div className="w-20 h-20 rounded-full border bg-gray-100 overflow-hidden">
-            {profile.ProfilePhoto ? (
-              <img
-                src={profile.ProfilePhoto}
-                alt="Foto de perfil"
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <span className="flex items-center justify-center h-full text-gray-500">
-                ?
-              </span>
-            )}
-          </div>
-          <div>
-            <h2 className="text-lg font-semibold">{profile.Name}</h2>
-            <p className="text-gray-500">{profile.Email}</p>
-          </div>
-        </div>
-        <button
-          onClick={handleLogout}
-          className="bg-red-500 text-black px-4 py-2 rounded hover:cursor-pointer transition-colors duration-150"
-        >
-          Cerrar sesión
-        </button>
-      </div>
-
-      {/* Descripción */}
-      <Card className="mt-4 p-4">
-        <CardContent>
-          <h3 className="text-lg font-semibold mb-2">Descripción</h3>
-          <textarea
-            className="w-full border rounded p-2"
-            rows={4}
-            value={newDescription}
-            onChange={(e) => setNewDescription(e.target.value)}
-          />
-          <button
-            onClick={handleUpdateProfile}
-            disabled={saving}
-            className="mt-2 bg-blue-500 text-white px-4 py-1 rounded hover:bg-blue-600 transition-colors"
-          >
-            {saving ? 'Guardando...' : 'Guardar descripción'}
-          </button>
-        </CardContent>
-      </Card>
-
-      {/* Etiquetas */}
-      <Card className="mt-4 p-4">
-        <CardContent>
-          <h3 className="text-lg font-semibold mb-2">Etiquetas identificadoras</h3>
-          <div className="flex flex-wrap gap-2 mb-2">
-            {userTags.map((tag) => (
-              <span key={tag} className="bg-gray-200 px-3 py-1 rounded flex items-center">
-                {tag}
-                <button onClick={() => handleRemoveTag(tag)} className="ml-1 text-red-500 hover:text-red-700">
-                  ×
-                </button>
-              </span>
-            ))}
-          </div>
-          <div className="flex gap-2 items-start">
-            <div className="flex-1">
-              <input
-                type="text"
-                value={newTag}
-                onChange={(e) => { setNewTag(e.target.value); setTagError(null); }}
-                placeholder="Nueva etiqueta"
-                className="w-full border rounded p-1"
-              />
-              {tagError && <p className="text-sm text-red-500 mt-1">{tagError}</p>}
+    <div className="bg-gray-100 min-h-screen py-8">
+      <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-lg p-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row items-center justify-between mb-6">
+          <div className="flex items-center space-x-4 mb-4 sm:mb-0">
+            <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-indigo-300 bg-gray-50">
+              {profile.ProfilePhoto ? (
+                <img
+                  src={profile.ProfilePhoto}
+                  alt="Foto de perfil"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="flex items-center justify-center h-full text-gray-400 text-xl">
+                  ?
+                </span>
+              )}
             </div>
-            <button onClick={handleAddTag} className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 transition-colors">
-              Agregar
-            </button>
+            <div>
+              <h2 className="text-2xl font-bold text-gray-800">{profile.Name}</h2>
+              <p className="text-gray-600 italic">{profile.Email}</p>
+            </div>
           </div>
-        </CardContent>
-      </Card>
+          <button
+            onClick={handleLogout}
+            className="bg-red-500 text-white uppercase px-4 py-2 rounded-lg shadow hover:bg-red-600 transition-colors duration-150"
+          >
+            Cerrar sesión
+          </button>
+        </div>
+
+        {/* Descripción */}
+        <Card className="bg-white shadow-md rounded-lg">
+          <CardContent>
+            <h3 className="text-lg font-semibold mb-3 text-gray-800">Descripción</h3>
+            <textarea
+              className="w-full border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+              rows={5}
+              value={newDescription}
+              onChange={handleDescriptionChange}
+              placeholder="Escribe tu descripción..."
+            />
+            <div className="flex justify-between items-center mt-2">
+              <p className={`text-sm ${
+                newDescription.length > 500 ? 'text-red-500' : 'text-gray-500'
+              }`}>{newDescription.length}/500</p>
+              {descError && <p className="text-sm text-red-500">{descError}</p>}
+            </div>
+            <button
+              onClick={handleUpdateProfile}
+              disabled={saving || !!descError}
+              className={`mt-4 w-full uppercase font-semibold py-2 rounded-lg shadow text-white transition-colors duration-150 ${
+                saving || descError ? 'bg-gray-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'
+              }`}
+            >
+              {saving ? 'Guardando...' : 'Guardar descripción'}
+            </button>
+          </CardContent>
+        </Card>
+
+        {/* Etiquetas */}
+        <Card className="mt-6 bg-white shadow-md rounded-lg">
+          <CardContent>
+            <h3 className="text-lg font-semibold mb-3 text-gray-800">Etiquetas</h3>
+            <div className="flex flex-wrap gap-2 mb-4">
+              {userTags.map((tag) => (
+                <span key={tag} className="flex items-center bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full">
+                  {tag}
+                  <button
+                    onClick={() => handleRemoveTag(tag)}
+                    className="ml-2 text-indigo-600 hover:text-indigo-800"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+            <div className="flex gap-2 items-start">
+              <div className="flex-1">
+                <input
+                  type="text"
+                  value={newTag}
+                  onChange={(e) => { setNewTag(e.target.value); setTagError(null); }}
+                  placeholder="Nueva etiqueta"
+                  className="w-full border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                />
+                {tagError && <p className="text-sm text-red-500 mt-1">{tagError}</p>}
+              </div>
+              <button
+                onClick={handleAddTag}
+                className="uppercase font-semibold px-4 py-2 rounded-lg shadow text-white transition-colors duration-150 bg-green-500 hover:bg-green-600"
+              >
+                Agregar
+              </button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

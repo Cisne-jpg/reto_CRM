@@ -51,7 +51,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
       {ownerName && (
         <div className="ml-auto flex items-center space-x-4">
           <p className="text-gray-700">
-            Bienvenido/a, <span className="font-semibold">{ownerName}</span>!
+            <span className="font-semibold">{ownerName}</span>
           </p>
           <div className="bg-gray-300 w-8 h-8 rounded-full flex items-center justify-center text-white">
             {initial}
