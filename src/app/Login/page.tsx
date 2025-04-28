@@ -1,5 +1,4 @@
 'use client';
-
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -10,12 +9,8 @@ export default function Login() {
   const [success, setSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  // URL base dinámica: usa la variable de entorno o detecta localhost
-  const API_BASE_URL =
-    process.env.NEXT_PUBLIC_API_URL ||
-    (typeof window !== "undefined" && window.location.hostname === "localhost"
-      ? "http://localhost:3000"
-      : "https://api-crm-livid.vercel.app");
+  // ✅ Usa solamente la variable de entorno
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -41,7 +36,7 @@ export default function Login() {
     if (!validateForm()) return;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/owners/login`, {
+      const response = await fetch(`${API_BASE_URL}/owners/Login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -58,11 +53,8 @@ export default function Login() {
         return;
       }
 
-      // Extrae y guarda OwnerID y OwnerName
       const ownerId = data.user?.OwnerID;
       const ownerName = data.user?.Name || data.user?.name;
-      console.log("OwnerID extraído:", ownerId);
-      console.log("OwnerName extraído:", ownerName);
 
       if (ownerId) {
         localStorage.setItem("ownerId", ownerId.toString());

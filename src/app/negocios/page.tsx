@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from "react";
+import { PieChartTareas, PieDataItem, buildPieData } from "../Components/piechartUtils"; // 👈 importamos tu componente de gráfico
 
 type Task = {
   id: number;
@@ -34,11 +35,11 @@ export default function Negocios() {
     "column-3": { id: "column-3", title: "Toques finales", taskIds: [] },
     "column-4": { id: "column-4", title: "Esperando Confirmación", taskIds: [] },
   });
+  const [pieData, setPieData] = useState<PieDataItem[]>([]); // 👈 estado para el gráfico
   const [newTaskContent, setNewTaskContent] = useState("");
   const [selectedColumn, setSelectedColumn] = useState("column-1");
   const [ownerId, setOwnerId] = useState<number | null>(null);
 
-  // URL base para la API: en dev localhost, en prod Vercel o variable NEXT_PUBLIC_API_URL
   const API_BASE_URL =
     process.env.NEXT_PUBLIC_API_URL ||
     (typeof window !== 'undefined' && window.location.hostname === 'localhost'
@@ -74,16 +75,36 @@ export default function Negocios() {
 
       setTasks(tasksMap);
       setColumns(cols);
+
     } catch (err) {
       console.error("fetchKanbanItems error:", err);
     }
   };
 
+const fetchPieData = async () => {
+    if (!ownerId) return;
+    try {
+      const data = await buildPieData(
+        ["Revision", "En contacto", "Toques finales", "Esperando Confirmación"],
+        `${API_BASE_URL}/kanban/${ownerId}`
+      );
+      setPieData(data);
+      
+    } catch (err) {
+      console.error("Error fetching pie data:", err);
+    }
+  };
+
   useEffect(() => {
-    if (ownerId) fetchKanbanItems();
+    if (ownerId) {
+      fetchKanbanItems(); 
+      fetchPieData();
+    }
   }, [ownerId]);
 
-  // Mejor manejo de errores para ver qué devuelve el servidor
+  
+
+
   const addTask = async () => {
     if (!newTaskContent.trim() || ownerId === null) return;
     try {
@@ -107,6 +128,7 @@ export default function Negocios() {
       }
       setNewTaskContent("");
       await fetchKanbanItems();
+      await fetchPieData();
     } catch (err) {
       console.error("addTask error:", err);
     }
@@ -118,6 +140,7 @@ export default function Negocios() {
       const res = await fetch(`${API_BASE_URL}/kanban/${task.id}`, { method: "DELETE" });
       if (!res.ok) throw new Error(`delete failed ${res.status}`);
       await fetchKanbanItems();
+      await fetchPieData();
     } catch (err) {
       console.error("deleteTask error:", err);
     }
@@ -155,7 +178,6 @@ export default function Negocios() {
     const task = tasks[taskKey];
     const newEstado = estadoForColumn[toCol];
 
-    // Optimista: actualiza UI
     setColumns((prev) => {
       const fromIds = prev[fromColumn].taskIds.filter((id) => id !== taskKey);
       const toIds = [...prev[toCol].taskIds, taskKey];
@@ -168,15 +190,19 @@ export default function Negocios() {
 
     try {
       await updateTaskState(task.id, newEstado);
-    } catch {
-      // si falla, recarga desde servidor
       await fetchKanbanItems();
+      await fetchPieData();
+    } catch {
+      await fetchKanbanItems();
+      await fetchPieData();
     }
   };
 
   return (
     <div className="min-h-screen p-4 bg-gray-100">
       <h1 className="text-3xl font-bold text-center mb-6">Negociaciones actuales</h1>
+
+      {/* Sección para agregar tareas */}
       <div className="mb-6 flex items-center gap-4 justify-center">
         <input
           type="text"
@@ -202,6 +228,8 @@ export default function Negocios() {
           Agregar tarea
         </button>
       </div>
+
+      {/* División de columnas */}
       <div className="flex gap-4">
         {Object.values(columns).map((col) => (
           <div key={col.id} className="flex-1 bg-white p-4 rounded shadow">
@@ -218,17 +246,23 @@ export default function Negocios() {
                           onClick={() => void moveTask(tk, col.id, "backward")}
                           disabled={col.id === "column-1"}
                           className="text-blue-600 hover:underline disabled:text-gray-400"
-                        >Atrás</button>
+                        >
+                          Atrás
+                        </button>
                         <button
                           onClick={() => void moveTask(tk, col.id, "forward")}
                           disabled={col.id === "column-4"}
                           className="text-blue-600 hover:underline disabled:text-gray-400"
-                        >Adelante</button>
+                        >
+                          Adelante
+                        </button>
                       </div>
                       <button
                         onClick={() => deleteTask(tk)}
                         className="text-red-600 hover:underline text-sm"
-                      >Eliminar</button>
+                      >
+                        Eliminar
+                      </button>
                     </div>
                   </div>
                 );
@@ -237,6 +271,12 @@ export default function Negocios() {
           </div>
         ))}
       </div>
+
+      {/* División para el gráfico de pastel */}
+      <div className="mt-25  justify-center bg-white p-6 rounded  h-[500px]">
+  <PieChartTareas pieData={pieData} />
+</div>
+
     </div>
   );
 }

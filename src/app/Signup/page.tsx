@@ -45,7 +45,7 @@ export default function Signup() {
       console.log('Formulario válido:', formData);
 
       try {
-        const response = await fetch('http://localhost:3000/owners/signup', {
+        const response = await fetch('http://localhost:4000/owners/signup', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
