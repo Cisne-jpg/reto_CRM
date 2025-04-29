@@ -57,7 +57,7 @@ export default function NavBar() {
 
       {/* Sección Videojuego */}
       <div className="border-t border-gray-700 pt-6 mt-8">
-        <Link href="/" className="flex items-center gap-4 hover:text-green-400 transition-colors">
+        <Link href="https://effortless-salamander-78f1fd.netlify.app/" className="flex items-center gap-4 hover:text-green-400 transition-colors">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6 text-white">
             <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0 1 12 15a9.065 9.065 0 0 0-6.23-.693L5 14.5m14.8.8 1.402 1.402c.4.398.4 1.043 0 1.442l-.984.984c-.598.598-1.57.598-2.168 0L14.25 15.3m3.346 3.346 3.07 3.07M5 14.5l3.07 3.07M5 14.5l-3.07 3.07m0 0-3.07-3.07M17.28 9.28l-5.403 5.403" />
           </svg>

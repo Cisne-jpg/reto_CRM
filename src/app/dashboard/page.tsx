@@ -14,12 +14,12 @@ export default function ProfileDashboard() {
         <Card className="flex-1 relative">
           <CardContent>
             <h2 className="font-semibold mb-2">Contactos sugeridos</h2>
-            <div className="absolute top-0 left-0 relative overflow-hidden" style={{ width: '600px', height: '450px' }}>
+            <div className="absolute top-0 left-0 relative overflow-hidden" style={{ width: '500px', height: '250px' }}>
               <iframe
-                width="400"
-                height="200"
+                width="600"
+                height="500"
                 style={{ transform: 'scale(1.5)', transformOrigin: 'top left' }}
-                src="https://lookerstudio.google.com/embed/reporting/2a682bba-9877-4939-9dab-3b4053ea9316/page/OOeFF&reportMode=VIEW&zoom=200"
+                src=""
                 sandbox="allow-storage-access-by-user-activation allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox">
               </iframe>
             </div>

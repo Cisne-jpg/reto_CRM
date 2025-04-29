@@ -82,7 +82,7 @@ export default function Contactos() {
 
   const showToast = (message: string, type: 'success' | 'error') => {
     setToast({ message, type, visible: true });
-    setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 3001);
+    setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 3000);
   };
 
   useEffect(() => {

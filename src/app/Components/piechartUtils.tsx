@@ -3,10 +3,47 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, Sector } from 'recharts';
 import React from 'react';
 
+// Definición de tipos e interfaces
+interface LabelProps {
+  cx: number;
+  cy: number;
+  midAngle: number;
+  innerRadius: number;
+  outerRadius: number;
+  percent: number;
+}
+
+interface ActiveShapeProps {
+  cx: number;
+  cy: number;
+  midAngle: number;
+  innerRadius: number;
+  outerRadius: number;
+  startAngle: number;
+  endAngle: number;
+  fill: string;
+  payload: PieDataItem;
+  percent: number;
+  value: number;
+}
+
+export type PieDataItem = {
+  name: string;
+  value: number;
+};
+
 // Colores: azul rey, rojo, verde, amarillo
 export const COLORS = ['#0057B7', '#FF0000', '#00A86B', '#FFD700'];
+
 // Función para renderizar etiquetas personalizadas
-const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
+const renderCustomizedLabel = ({
+  cx,
+  cy,
+  midAngle,
+  innerRadius,
+  outerRadius,
+  percent
+}: LabelProps) => {
   const RADIAN = Math.PI / 180;
   const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
   const x = cx + radius * Math.cos(-midAngle * RADIAN);
@@ -25,50 +62,19 @@ const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, per
   );
 };
 
-// Tipo de dato para el pie
-export type PieDataItem = {
-  name: string;
-  value: number;
-};
-
-// Función para construir los datos del gráfico
-export async function buildPieData(estados: string[], url: string): Promise<PieDataItem[]> {
-  const promises = estados.map(async (estado) => {
-    try {
-      console.log(`🛠 Solicitud a la API para el estado: ${estado}`);
-
-      const response = await fetch(`${url}/${estado}`);
-      if (!response.ok) {
-        throw new Error(`Error fetching data for estado ${estado}: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      console.log(`📦 Datos recibidos para ${estado}:`, data);
-
-      return {
-        name: estado,
-        value: data || 0,
-      };
-
-    } catch (error) {
-      console.error(`❌ Error al procesar el estado ${estado}:`, error);
-      return {
-        name: estado,
-        value: 0,
-      };
-    }
-  });
-
-  const pieData = await Promise.all(promises);
-  console.log("📊 Datos finales para el gráfico de pastel:", pieData);
-  return pieData;
-}
-
 // Componente personalizado para la parte activa
-const renderActiveShape = (props: any) => {
-  const {
-    cx, cy, midAngle, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent, value,
-  } = props;
+const renderActiveShape = ({
+  cx,
+  cy,
+  midAngle,
+  innerRadius,
+  outerRadius,
+  startAngle,
+  endAngle,
+  fill,
+  percent,
+  value
+}: ActiveShapeProps) => {
   const RADIAN = Math.PI / 180;
   const sin = Math.sin(-RADIAN * midAngle);
   const cos = Math.cos(-RADIAN * midAngle);
@@ -82,7 +88,6 @@ const renderActiveShape = (props: any) => {
 
   return (
     <g>
-    
       <Sector
         cx={cx}
         cy={cy}
@@ -126,7 +131,7 @@ const renderActiveShape = (props: any) => {
 export function PieChartTareas({ pieData }: { pieData: PieDataItem[] }) {
   const [activeIndex, setActiveIndex] = React.useState(0);
 
-  const onPieEnter = (_: any, index: number) => {
+  const onPieEnter = (_: React.MouseEvent, index: number) => {
     setActiveIndex(index);
   };
 
@@ -173,3 +178,29 @@ export function PieChartTareas({ pieData }: { pieData: PieDataItem[] }) {
     </div>
   );
 };
+
+// Función para construir los datos del gráfico (se mantiene igual)
+export async function buildPieData(estados: string[], url: string): Promise<PieDataItem[]> {
+  const promises = estados.map(async (estado) => {
+    try {
+      console.log(`🛠 Solicitud a la API para el estado: ${estado}`);
+      const response = await fetch(`${url}/${estado}`);
+      if (!response.ok) {
+        throw new Error(`Error fetching data for estado ${estado}: ${response.statusText}`);
+      }
+      const data = await response.json();
+      return {
+        name: estado,
+        value: data || 0,
+      };
+    } catch (error) {
+      console.error(`❌ Error al procesar el estado ${estado}:`, error);
+      return {
+        name: estado,
+        value: 0,
+      };
+    }
+  });
+
+  return await Promise.all(promises);
+}
