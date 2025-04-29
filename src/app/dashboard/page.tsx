@@ -19,7 +19,7 @@ export default function ProfileDashboard() {
                 width="600"
                 height="500"
                 style={{ transform: 'scale(1.5)', transformOrigin: 'top left' }}
-                src=""
+                src="https://lookerstudio.google.com/reporting/1098f6f8-1eea-4f4a-8bc0-a3276cee32ec"
                 sandbox="allow-storage-access-by-user-activation allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox">
               </iframe>
             </div>
