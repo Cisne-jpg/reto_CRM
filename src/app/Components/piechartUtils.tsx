@@ -1,9 +1,21 @@
 'use client';
 
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, Sector } from 'recharts';
-import React from 'react';
+import React, { useState } from 'react';
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+  Legend,
+  Sector,
+} from 'recharts';
 
-// Definición de tipos e interfaces
+export interface PieDataItem {
+  name: string;
+  value: number;
+}
+
 interface LabelProps {
   cx: number;
   cy: number;
@@ -13,36 +25,15 @@ interface LabelProps {
   percent: number;
 }
 
-interface ActiveShapeProps {
-  cx: number;
-  cy: number;
-  midAngle: number;
-  innerRadius: number;
-  outerRadius: number;
-  startAngle: number;
-  endAngle: number;
-  fill: string;
-  payload: PieDataItem;
-  percent: number;
-  value: number;
-}
+const COLORS = ['#0057B7', '#FF0000', '#00A86B', '#FFD700'];
 
-export type PieDataItem = {
-  name: string;
-  value: number;
-};
-
-// Colores: azul rey, rojo, verde, amarillo
-export const COLORS = ['#0057B7', '#FF0000', '#00A86B', '#FFD700'];
-
-// Función para renderizar etiquetas personalizadas
 const renderCustomizedLabel = ({
   cx,
   cy,
   midAngle,
   innerRadius,
   outerRadius,
-  percent
+  percent,
 }: LabelProps) => {
   const RADIAN = Math.PI / 180;
   const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
@@ -62,19 +53,31 @@ const renderCustomizedLabel = ({
   );
 };
 
-// Componente personalizado para la parte activa
-const renderActiveShape = ({
-  cx,
-  cy,
-  midAngle,
-  innerRadius,
-  outerRadius,
-  startAngle,
-  endAngle,
-  fill,
-  percent,
-  value
-}: ActiveShapeProps) => {
+const renderActiveShape = (props: unknown): React.ReactElement => {
+  const {
+    cx,
+    cy,
+    midAngle,
+    innerRadius,
+    outerRadius,
+    startAngle,
+    endAngle,
+    fill,
+    value,
+    percent,
+  } = props as {
+    cx: number;
+    cy: number;
+    midAngle: number;
+    innerRadius: number;
+    outerRadius: number;
+    startAngle: number;
+    endAngle: number;
+    fill: string;
+    value: number;
+    percent: number;
+  };
+
   const RADIAN = Math.PI / 180;
   const sin = Math.sin(-RADIAN * midAngle);
   const cos = Math.cos(-RADIAN * midAngle);
@@ -100,22 +103,22 @@ const renderActiveShape = ({
       <Sector
         cx={cx}
         cy={cy}
-        startAngle={startAngle}
-        endAngle={endAngle}
         innerRadius={outerRadius + 6}
         outerRadius={outerRadius + 10}
+        startAngle={startAngle}
+        endAngle={endAngle}
         fill={fill}
       />
       <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={fill} fill="none" />
-      <circle cx={ex} cy={ey} r={2} fill={fill} stroke="none" />
+      <circle cx={ex} cy={ey} r={2} fill={fill} />
       <text
-        x={ex + (cos >= 0 ? 1 : -1) * 12}
+        x={ex + (cos >= 0 ? 12 : -12)}
         y={ey}
         textAnchor={textAnchor}
         fill="#333"
       >{`${value} tareas`}</text>
       <text
-        x={ex + (cos >= 0 ? 1 : -1) * 12}
+        x={ex + (cos >= 0 ? 12 : -12)}
         y={ey}
         dy={18}
         textAnchor={textAnchor}
@@ -127,13 +130,8 @@ const renderActiveShape = ({
   );
 };
 
-// Componente del gráfico de pastel
 export function PieChartTareas({ pieData }: { pieData: PieDataItem[] }) {
-  const [activeIndex, setActiveIndex] = React.useState(0);
-
-  const onPieEnter = (_: React.MouseEvent, index: number) => {
-    setActiveIndex(index);
-  };
+  const [activeIndex, setActiveIndex] = useState(0);
 
   return (
     <div className="bg-white p-6 rounded shadow mt-8 min-h-[400px] relative flex items-center justify-center">
@@ -156,10 +154,10 @@ export function PieChartTareas({ pieData }: { pieData: PieDataItem[] }) {
                 outerRadius={100}
                 fill="#8884d8"
                 label={renderCustomizedLabel}
-                isAnimationActive={true}
+                isAnimationActive
                 animationDuration={1000}
                 animationEasing="ease-out"
-                onMouseEnter={onPieEnter}
+                onMouseEnter={(_, index) => setActiveIndex(index)}
               >
                 {pieData.map((_, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -177,30 +175,25 @@ export function PieChartTareas({ pieData }: { pieData: PieDataItem[] }) {
       )}
     </div>
   );
-};
+}
 
-// Función para construir los datos del gráfico (se mantiene igual)
-export async function buildPieData(estados: string[], url: string): Promise<PieDataItem[]> {
+export async function buildPieData(
+  estados: string[],
+  url: string
+): Promise<PieDataItem[]> {
   const promises = estados.map(async (estado) => {
     try {
-      console.log(`🛠 Solicitud a la API para el estado: ${estado}`);
       const response = await fetch(`${url}/${estado}`);
       if (!response.ok) {
-        throw new Error(`Error fetching data for estado ${estado}: ${response.statusText}`);
+        throw new Error(`Error al obtener el estado ${estado}`);
       }
       const data = await response.json();
-      return {
-        name: estado,
-        value: data || 0,
-      };
+      return { name: estado, value: data || 0 };
     } catch (error) {
-      console.error(`❌ Error al procesar el estado ${estado}:`, error);
-      return {
-        name: estado,
-        value: 0,
-      };
+      console.error(`Error con el estado ${estado}:`, error);
+      return { name: estado, value: 0 };
     }
   });
 
-  return await Promise.all(promises);
+  return Promise.all(promises);
 }

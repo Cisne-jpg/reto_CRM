@@ -1,5 +1,5 @@
 'use client';
-
+import Image from 'next/image';
 import React, { useState, useEffect } from "react";
 
 interface Contact {
@@ -37,9 +37,11 @@ const ContactCard: React.FC<ContactCardProps> = ({ contact, onAddToKanban, alrea
   return (
     <div className="flex justify-between items-center p-6 mb-4 bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow">
       <div className="flex items-center gap-6">
-        <img
+        <Image
           src={contact.FotoPerfil}
           alt="Foto de perfil"
+          width={80} 
+          height={80}
           className="w-20 h-20 rounded-full object-cover border-4 border-blue-100"
         />
         <div className="space-y-2">
@@ -113,12 +115,12 @@ export default function Contactos() {
         setContacts(contactsData.contacts);
         setKanbanTitles(kanbanData.map(t => t.titulo));
         
-      } catch (err: any) {
-        if (err.name !== 'AbortError') {
-          console.error('Fetch error:', err);
-          showToast('Error al cargar los datos', 'error');
+      }catch (err: unknown) {
+        if (err instanceof Error && err.name !== 'AbortError') {
+            console.error('Fetch error:', err);
+            showToast('Error al cargar los datos', 'error');
         }
-      } finally {
+    } finally {
         setLoading(false);
       }
     };
@@ -156,10 +158,11 @@ export default function Contactos() {
       setKanbanTitles(prev => [...prev, taskData.titulo]);
       showToast(`Trato con ${contact.Name} creado!`, 'success');
 
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Error al crear trato';
       console.error('Error adding deal:', err);
-      showToast(err.message || 'Error al crear trato', 'error');
-    }
+      showToast(errorMessage, 'error');
+  }
   };
 
   const handleDuplicate = (contact: Contact) => {

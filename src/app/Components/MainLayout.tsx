@@ -19,11 +19,11 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     const storedName = localStorage.getItem("ownerName");
     setOwnerName(storedName);
     setIsSidebarOpen(
-      !!storedName && !["/login", "/", "/Signup"].includes(pathname)
+      !!storedName && !["/Login", "/", "/Signup"].includes(pathname)
     );
   }, [pathname]);
 
-  const hideComponents = ["/login", "/", "/Signup"].includes(pathname);
+  const hideComponents = ["/Login", "/", "/Signup"].includes(pathname);
   const showHeaderNavbar = !!ownerName && !hideComponents;
 
   if (!isMounted) return null;

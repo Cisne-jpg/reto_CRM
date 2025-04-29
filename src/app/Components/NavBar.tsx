@@ -1,15 +1,18 @@
 'use client';
 
 import Link from "next/link";
+import Image from "next/image";
 
 export default function NavBar() {
   return (
     <nav className="w-64 bg-black p-8 border-r border-gray-800 text-white h-screen fixed left-0 top-0 flex flex-col overflow-y-auto">
       {/* Logo */}
       <div className="mb-12 flex justify-center">
-        <img
+        <Image
           src="https://i.ibb.co/svQ1DTHd/IMG-4795.png"
           alt="Logo"
+          width={24} 
+          height={24}
           className="h-20 w-20 rounded-full object-cover border-2 border-white"
         />
       </div>

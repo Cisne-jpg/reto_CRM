@@ -1,4 +1,5 @@
 'use client';
+import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -68,8 +69,10 @@ export default function Login() {
         {/* Cabecera con gradiente */}
         <div className="bg-gradient-to-r from-blue-600 to-blue-800 p-6 text-center">
           <div className="animate-float">
-            <img
+            <Image
               src="https://i.ibb.co/svQ1DTHd/IMG-4795.png"
+              width={120}
+              height={40}
               alt="Logo CRM"
               className="h-16 w-16 mx-auto object-contain"
             />

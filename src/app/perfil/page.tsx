@@ -1,4 +1,5 @@
 'use client';
+import Image from "next/image";
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
@@ -83,7 +84,7 @@ export default function ProfileDashboard() {
         setProfile(data);
         setNewDescription(data.Descrip || "");
         setUserTags(data.Tags || []);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Fetch profile error:", err);
         setError("No se pudo cargar el perfil");
       } finally {
@@ -194,8 +195,10 @@ export default function ProfileDashboard() {
           <div className="flex items-center space-x-4 mb-4 sm:mb-0">
             <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-indigo-300 bg-gray-50">
               {profile.ProfilePhoto ? (
-                <img
+                <Image
                   src={profile.ProfilePhoto}
+                  width={30}
+                  height={30}
                   alt="Foto de perfil"
                   className="w-full h-full object-cover"
                 />

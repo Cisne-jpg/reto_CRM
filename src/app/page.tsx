@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from "next/link";
+import Image from "next/image";
 
 export default function HomePage() {
   return (
@@ -9,8 +10,10 @@ export default function HomePage() {
         <div className="container mx-auto px-4 text-center">
           <div className="max-w-2xl mx-auto mb-12">
             <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-full p-2 w-48 h-48 mx-auto flex items-center justify-center transform hover:scale-105 transition-all duration-300">
-              <img
+              <Image
                 src="https://i.ibb.co/svQ1DTHd/IMG-4795.png"
+                width={1920}
+                height={1080}
                 alt="Logo"
                 className="h-24 w-24 object-contain animate-float"
               />
@@ -85,7 +88,7 @@ export default function HomePage() {
               <Link href="/Signup" className="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors shadow-sm">
                 Crear cuenta gratuita
               </Link>
-              <Link href="/login" className="text-white px-8 py-3 rounded-lg font-semibold border-2 border-white hover:bg-white/10 transition-colors">
+              <Link href="/Login" className="text-white px-8 py-3 rounded-lg font-semibold border-2 border-white hover:bg-white/10 transition-colors">
                 Iniciar sesión
               </Link>
             </div>
