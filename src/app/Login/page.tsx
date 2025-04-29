@@ -28,13 +28,7 @@ export default function Login() {
     }
 
     try {
-      const isLocal = typeof window !== 'undefined' && 
-                     (window.location.hostname === 'localhost' || 
-                      window.location.hostname === '127.0.0.1');
-      
-      const API_BASE_URL = isLocal 
-        ? 'http://localhost:3000' 
-        : process.env.NEXT_PUBLIC_API_URL;
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
       const res = await fetch(`${API_BASE_URL}/owners/login`, {
         method: 'POST',

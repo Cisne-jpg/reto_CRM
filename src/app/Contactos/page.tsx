@@ -74,7 +74,7 @@ export default function Contactos() {
                    (window.location.hostname === 'localhost' || 
                     window.location.hostname === '127.0.0.1');
     return isLocal 
-      ? 'http://localhost:3000' 
+      ? 'http://localhost:3001' 
       : process.env.NEXT_PUBLIC_API_URL || 'https://api-crm-livid.vercel.app';
   };
 
@@ -82,7 +82,7 @@ export default function Contactos() {
 
   const showToast = (message: string, type: 'success' | 'error') => {
     setToast({ message, type, visible: true });
-    setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 3000);
+    setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 3001);
   };
 
   useEffect(() => {

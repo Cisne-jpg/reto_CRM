@@ -55,7 +55,7 @@ export default function Negocios() {
                    (window.location.hostname === 'localhost' || 
                     window.location.hostname === '127.0.0.1');
     return isLocal 
-      ? 'http://localhost:3000' 
+      ? 'http://localhost:3001' 
       : process.env.NEXT_PUBLIC_API_URL || 'https://api-crm-livid.vercel.app';
   };
 
