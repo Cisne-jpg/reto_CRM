@@ -159,6 +159,7 @@ const fetchPieData = async () => {
       }
 
       await fetchKanbanItems();
+      await fetchPieData();
       setNewTaskContent("");
       showToast("Tarea creada exitosamente 🎉", 'success');
     } catch (error) {
@@ -179,6 +180,7 @@ const fetchPieData = async () => {
       if (!response.ok) throw new Error("Error al eliminar tarea");
 
       await fetchKanbanItems();
+      await fetchPieData();
       showToast("Tarea eliminada correctamente 🗑️", 'success');
     } catch (error) {
       console.error("Error deleting task:", error);
@@ -223,6 +225,7 @@ const fetchPieData = async () => {
     } catch (error) {
       console.error("Error moving task:", error);
       await fetchKanbanItems();
+      await fetchPieData();
       showToast("Error al mover la tarea. Recuperando datos...", 'error');
     }
   };
