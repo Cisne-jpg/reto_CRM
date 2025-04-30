@@ -29,7 +29,7 @@ export default function Login() {
     }
 
     try {
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
       const res = await fetch(`${API_BASE_URL}/owners/login`, {
         method: 'POST',
@@ -50,7 +50,7 @@ export default function Login() {
       localStorage.setItem('authToken', data.token);
 
       setSuccess(true);
-      setTimeout(() => router.push('/dashboard'), 1000);
+      setTimeout(() => router.push('/Dashboard'), 1000);
 
     } catch (err) {
       console.error('Error login:', err);
