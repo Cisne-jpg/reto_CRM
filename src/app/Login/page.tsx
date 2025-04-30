@@ -50,7 +50,7 @@ export default function Login() {
       localStorage.setItem('authToken', data.token);
 
       setSuccess(true);
-      setTimeout(() => router.push('/Dashboard'), 1000);
+      setTimeout(() => router.push('/dashboard'), 1000);
 
     } catch (err) {
       console.error('Error login:', err);
