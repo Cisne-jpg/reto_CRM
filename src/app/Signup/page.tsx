@@ -21,6 +21,8 @@ interface FormErrors {
   birthDate?: string;
 }
 
+type Field = keyof FormData;
+
 export default function Signup() {
   const router = useRouter();
   const [formData, setFormData] = useState<FormData>({
@@ -56,7 +58,8 @@ export default function Signup() {
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name as Field]: value });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -80,7 +83,7 @@ export default function Signup() {
         return;
       }
       setSuccess(true);
-      setTimeout(() => router.push('/login'), 2000);
+      setTimeout(() => router.push('/Login'), 2000);
     } catch {
       setErrorMessage('Error de conexión');
     }
@@ -99,21 +102,41 @@ export default function Signup() {
         </div>
         <h2 className="text-3xl font-bold text-center text-blue-600 mb-4">Crear cuenta</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {['firstName','lastName','email','password','birthDate'].map((field,key) => {
-            const type = field === 'email' ? 'email' : field === 'password' ? 'password' : field === 'birthDate' ? 'date' : 'text';
-            const label = field === 'firstName' ? 'Nombre' : field === 'lastName' ? 'Apellido' : field === 'email' ? 'Correo electrónico' : field === 'password' ? 'Contraseña' : 'Fecha de nacimiento';
+          {(['firstName', 'lastName', 'email', 'password', 'birthDate'] as Field[]).map((field, key) => {
+            const type =
+              field === 'email'
+                ? 'email'
+                : field === 'password'
+                ? 'password'
+                : field === 'birthDate'
+                ? 'date'
+                : 'text';
+
+            const label =
+              field === 'firstName'
+                ? 'Nombre'
+                : field === 'lastName'
+                ? 'Apellido'
+                : field === 'email'
+                ? 'Correo electrónico'
+                : field === 'password'
+                ? 'Contraseña'
+                : 'Fecha de nacimiento';
+
             return (
               <div key={key}>
                 <label className="block text-sm font-medium text-blue-700 mb-1">{label}</label>
                 <input
                   type={type}
                   name={field}
-                  value={(formData as any)[field]}
+                  value={formData[field]}
                   onChange={handleChange}
-                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 transition ${errors[field as keyof FormErrors]? 'border-red-300' : 'border-gray-300'}`}
+                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 transition ${
+                    errors[field] ? 'border-red-300' : 'border-gray-300'
+                  }`}
                 />
-                {errors[field as keyof FormErrors] && (
-                  <p className="text-red-500 text-xs mt-1">{errors[field as keyof FormErrors]}</p>
+                {errors[field] && (
+                  <p className="text-red-500 text-xs mt-1">{errors[field]}</p>
                 )}
               </div>
             );

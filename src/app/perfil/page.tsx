@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 
+// Tipado
 interface Profile {
   OwnerID: number;
   Name: string;
@@ -13,6 +14,34 @@ interface Profile {
   Descrip: string | null;
   Tags: string[];
 }
+
+// Función auxiliar movida fuera del componente
+const fetchJson = async (
+  path: string,
+  opts?: RequestInit,
+  localApiUrl = "",
+  hostedApiUrl = ""
+): Promise<Profile> => {
+  const tryLocal = localApiUrl
+    ? fetch(`${localApiUrl}${path}`, opts).catch(() => null)
+    : Promise.resolve(null);
+
+  const resLocal = await tryLocal;
+  const res = resLocal && resLocal.ok
+    ? resLocal
+    : await fetch(`${hostedApiUrl}${path}`, opts);
+
+  if (!res.ok) throw new Error(`Error ${res.status}`);
+  const json = await res.json();
+  const data = json.data;
+
+  if (data.Etiquetas) {
+    data.Tags = data.Etiquetas;
+    delete data.Etiquetas;
+  }
+
+  return data as Profile;
+};
 
 export default function ProfileDashboard() {
   const router = useRouter();
@@ -26,11 +55,9 @@ export default function ProfileDashboard() {
   const [tagError, setTagError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  // Configurable API URLs
   const LOCAL_API_URL = process.env.NEXT_PUBLIC_LOCAL_API_URL || "";
   const HOSTED_API_URL = process.env.NEXT_PUBLIC_API_URL!;
 
-  // Common headers (with optional auth)
   const getHeaders = () => {
     const token = typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
     return {
@@ -39,28 +66,6 @@ export default function ProfileDashboard() {
     };
   };
 
-  // Helper: fetch with optional local fallback and unwrap JSON wrapper
-  const fetchJson = async (path: string, opts?: RequestInit) => {
-    const tryLocal = LOCAL_API_URL
-      ? fetch(`${LOCAL_API_URL}${path}`, opts).catch(() => null)
-      : Promise.resolve(null);
-
-    const resLocal = await tryLocal;
-    const res = resLocal && resLocal.ok
-      ? resLocal
-      : await fetch(`${HOSTED_API_URL}${path}`, opts);
-
-    if (!res.ok) throw new Error(`Error ${res.status}`);
-    const json = await res.json();
-    const data = json.data;
-    if (data.Etiquetas) {
-      data.Tags = data.Etiquetas;
-      delete data.Etiquetas;
-    }
-    return data as Profile;
-  };
-
-  // Logout
   const handleLogout = () => {
     localStorage.removeItem("ownerId");
     localStorage.removeItem("ownerName");
@@ -69,7 +74,6 @@ export default function ProfileDashboard() {
     router.push("/");
   };
 
-  // Fetch profile on mount
   useEffect(() => {
     const ownerId = localStorage.getItem("ownerId");
     if (!ownerId) {
@@ -80,7 +84,7 @@ export default function ProfileDashboard() {
 
     (async () => {
       try {
-        const data = await fetchJson(`/profile/${ownerId}`);
+        const data = await fetchJson(`/profile/${ownerId}`, undefined, LOCAL_API_URL, HOSTED_API_URL);
         setProfile(data);
         setNewDescription(data.Descrip || "");
         setUserTags(data.Tags || []);
@@ -91,13 +95,12 @@ export default function ProfileDashboard() {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [LOCAL_API_URL, HOSTED_API_URL]);
 
-  // Handlers
   const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const val = e.target.value;
     if (val.length > 500) {
-      setDescError('La descripción no puede exceder 500 caracteres');
+      setDescError("La descripción no puede exceder 500 caracteres");
     } else {
       setDescError(null);
     }
@@ -117,7 +120,9 @@ export default function ProfileDashboard() {
           method: "PUT",
           headers: getHeaders(),
           body: JSON.stringify({ description: newDescription }),
-        }
+        },
+        LOCAL_API_URL,
+        HOSTED_API_URL
       );
       setProfile(data);
       setNewDescription(data.Descrip || "");
@@ -148,7 +153,9 @@ export default function ProfileDashboard() {
           method: "POST",
           headers: getHeaders(),
           body: JSON.stringify({ tag }),
-        }
+        },
+        LOCAL_API_URL,
+        HOSTED_API_URL
       );
       setProfile(data);
       setUserTags(data.Tags || []);
@@ -172,7 +179,9 @@ export default function ProfileDashboard() {
           method: "DELETE",
           headers: getHeaders(),
           body: JSON.stringify({ tag: tagToRemove }),
-        }
+        },
+        LOCAL_API_URL,
+        HOSTED_API_URL
       );
       setProfile(data);
       setUserTags(data.Tags || []);
@@ -197,8 +206,8 @@ export default function ProfileDashboard() {
               {profile.ProfilePhoto ? (
                 <Image
                   src={profile.ProfilePhoto}
-                  width={30}
-                  height={30}
+                  width={96}
+                  height={96}
                   alt="Foto de perfil"
                   className="w-full h-full object-cover"
                 />
