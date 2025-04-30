@@ -29,7 +29,7 @@ export default function Login() {
     }
 
     try {
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL!;
 
       const res = await fetch(`${API_BASE_URL}/owners/login`, {
         method: 'POST',
