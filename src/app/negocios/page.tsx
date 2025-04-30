@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { PieChartTareas, PieDataItem, buildPieData } from "../Components/piechartUtils"; // 👈 importamos tu componente de gráfico
 
+const BASE_URL = 'https://api-crm-livid.vercel.app';
+
 type Task = {
   id: number;
   titulo: string;
@@ -13,15 +15,15 @@ type Task = {
   owner_id: number;
 };
 
+type ColumnKey = "column-1" | "column-2" | "column-3" | "column-4";
+
 type Column = {
-  id: string;
+  id: ColumnKey;
   title: string;
   taskIds: string[];
 };
 
-type ColumnKey = "column-1" | "column-2" | "column-3" | "column-4";
-
-const estadoForColumn: { [key in ColumnKey]: string } = {
+const estadoForColumn: Record<ColumnKey, string> = {
   "column-1": "Revision",
   "column-2": "En contacto",
   "column-3": "Toques finales",
@@ -35,31 +37,20 @@ type Toast = {
 };
 
 export default function Negocios() {
-  const [tasks, setTasks] = useState<{ [key: string]: Task }>({});
-  const [columns, setColumns] = useState<{ [key in ColumnKey]: Column }>({
+  const [tasks, setTasks] = useState<Record<string, Task>>({});
+  const [columns, setColumns] = useState<Record<ColumnKey, Column>>({
     "column-1": { id: "column-1", title: "Revisión", taskIds: [] },
     "column-2": { id: "column-2", title: "En contacto", taskIds: [] },
     "column-3": { id: "column-3", title: "Toques finales", taskIds: [] },
     "column-4": { id: "column-4", title: "Confirmación", taskIds: [] },
   });
-  const [pieData, setPieData] = useState<PieDataItem[]>([]); // 👈 estado para el gráfico
+  const [pieData, setPieData] = useState<PieDataItem[]>([]);
   const [newTaskContent, setNewTaskContent] = useState("");
   const [selectedColumn, setSelectedColumn] = useState<ColumnKey>("column-1");
   const [ownerId, setOwnerId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<Toast>({ message: '', type: 'success', visible: false });
   const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
-
-  const getApiBaseUrl = () => {
-    const isLocal = typeof window !== 'undefined' && 
-                   (window.location.hostname === 'localhost' || 
-                    window.location.hostname === '127.0.0.1');
-    return isLocal 
-      ? 'http://localhost:3001' 
-      : process.env.NEXT_PUBLIC_API_URL || 'https://api-crm-livid.vercel.app';
-  };
-
-  const API_BASE_URL = getApiBaseUrl();
 
   const showToast = (message: string, type: 'success' | 'error') => {
     setToast({ message, type, visible: true });
@@ -72,73 +63,66 @@ export default function Negocios() {
   }, []);
 
   const mapEstadoToColumn = (estado: string): ColumnKey => {
-    const cleanEstado = estado.trim().toLowerCase();
-    const foundColumn = Object.entries(estadoForColumn).find(([, est]) => 
-      est.toLowerCase() === cleanEstado
-    )?.[0] as ColumnKey | undefined;
-    
-    return foundColumn || "column-1";
+    const clean = estado.trim().toLowerCase();
+    const found = (Object.entries(estadoForColumn) as [ColumnKey, string][])
+      .find(([, est]) => est.toLowerCase() === clean)?.[0];
+    return found || "column-1";
   };
 
-  // Dentro de tu componente
-const fetchKanbanItems = async () => {
-  if (!ownerId) return;
-  try {
+  const fetchKanbanItems = async () => {
+    if (!ownerId) return;
     setLoading(true);
-    const response = await fetch(`${API_BASE_URL}/kanban/${ownerId}`);
-    
-    const data: Task[] = await response.json();
-    
-    const tasksMap: Record<string, Task> = {};
-    const newColumns: Record<ColumnKey, Column> = {
-      "column-1": { id: "column-1", title: "Revisión", taskIds: [] },
-      "column-2": { id: "column-2", title: "En contacto", taskIds: [] },
-      "column-3": { id: "column-3", title: "Toques finales", taskIds: [] },
-      "column-4": { id: "column-4", title: "Confirmación", taskIds: [] },
-    };
+    try {
+      const res = await fetch(`${BASE_URL}/kanban/${ownerId}`);
+      const data: Task[] = await res.json();
+      const tasksMap: Record<string, Task> = {};
+      const newCols: Record<ColumnKey, Column> = {
+        "column-1": { id: "column-1", title: "Revisión", taskIds: [] },
+        "column-2": { id: "column-2", title: "En contacto", taskIds: [] },
+        "column-3": { id: "column-3", title: "Toques finales", taskIds: [] },
+        "column-4": { id: "column-4", title: "Confirmación", taskIds: [] },
+      };
+      data.forEach(task => {
+        const key = `task-${task.id}`;
+        tasksMap[key] = task;
+        const col = mapEstadoToColumn(task.estado);
+        newCols[col].taskIds.push(key);
+      });
+      setTasks(tasksMap);
+      setColumns(newCols);
+    } catch (err) {
+      console.error("Error fetching data:", err);
+      showToast('Error al cargar datos', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    data.forEach((task) => {
-      const taskKey = `task-${task.id}`;
-      tasksMap[taskKey] = task;
-      const columnId = mapEstadoToColumn(task.estado);
-      newColumns[columnId].taskIds.push(taskKey); // ✅ Sin error
-    });
-
-    setTasks(tasksMap);
-    setColumns(newColumns);
-  } catch (error) {
-    console.error("Error fetching data:", error);
-  } finally {
-    setLoading(false);
-  }
-};
-
-const fetchPieData = async () => {
+  const fetchPie = async () => {
     if (!ownerId) return;
     try {
       const data = await buildPieData(
         ["Revision", "En contacto", "Toques finales", "Esperando Confirmación"],
-        `${API_BASE_URL}/kanban/${ownerId}`
+        `${BASE_URL}/kanban/${ownerId}`
       );
       setPieData(data);
-      
     } catch (err) {
       console.error("Error fetching pie data:", err);
+      showToast('Error al cargar gráfico', 'error');
     }
   };
 
   useEffect(() => {
     if (ownerId) {
-      fetchKanbanItems(); 
-      fetchPieData();
+      fetchKanbanItems();
+      fetchPie();
     }
   }, [ownerId]);
 
   const handleAddTask = async () => {
     if (!newTaskContent.trim() || !ownerId) return;
-
     try {
-      const newTask = {
+      const task = {
         titulo: newTaskContent,
         descripcion: "",
         estado: estadoForColumn[selectedColumn],
@@ -146,90 +130,71 @@ const fetchPieData = async () => {
         prioridad: "media",
         owner_id: ownerId,
       };
-
-      const response = await fetch(`${API_BASE_URL}/kanban`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newTask),
+      const res = await fetch(`${BASE_URL}/kanban`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(task),
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Error al crear tarea");
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || 'Error al crear tarea');
       }
-
-      await [fetchKanbanItems(),fetchPieData()];
-
+      await fetchKanbanItems();
+      await fetchPie();
       setNewTaskContent("");
-      showToast("Tarea creada exitosamente 🎉", 'success');
-    } catch (error) {
-      console.error("Error creating task:", error);
-      showToast(error instanceof Error ? error.message : "Error desconocido", 'error');
+      showToast('Tarea creada exitosamente 🎉', 'success');
+    } catch (err: any) {
+      console.error("Error creating task:", err);
+      showToast(err.message || 'Error desconocido', 'error');
     }
   };
 
-  const handleDeleteTask = async () => {
+  const handleDelete = async () => {
     if (!taskToDelete) return;
-    
     try {
-      const taskId = tasks[taskToDelete].id;
-      const response = await fetch(`${API_BASE_URL}/kanban/${taskId}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) throw new Error("Error al eliminar tarea");
-
-      await [fetchKanbanItems(),fetchPieData()];
-
-      showToast("Tarea eliminada correctamente 🗑️", 'success');
-    } catch (error) {
-      console.error("Error deleting task:", error);
-      showToast("Error al eliminar la tarea", 'error');
+      const id = tasks[taskToDelete].id;
+      const res = await fetch(`${BASE_URL}/kanban/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Error al eliminar tarea');
+      await fetchKanbanItems();
+      await fetchPie();
+      showToast('Tarea eliminada correctamente 🗑️', 'success');
+    } catch (err) {
+      console.error("Error deleting task:", err);
+      showToast('Error al eliminar la tarea', 'error');
     } finally {
       setTaskToDelete(null);
     }
   };
 
-  const handleMoveTask = async (taskKey: string, currentColumn: ColumnKey, direction: "forward" | "backward") => {
-    const columnOrder: ColumnKey[] = ["column-1", "column-2", "column-3", "column-4"];
-    const currentIndex = columnOrder.indexOf(currentColumn);
-    const newIndex = direction === "forward" ? currentIndex + 1 : currentIndex - 1;
-    
-    if (newIndex < 0 || newIndex >= columnOrder.length) return;
-
-    const newColumn = columnOrder[newIndex];
-    const task = tasks[taskKey];
-    const newEstado = estadoForColumn[newColumn];
-
+  const handleMove = async (key: string, current: ColumnKey, dir: 'forward' | 'backward') => {
+    const order: ColumnKey[] = ['column-1', 'column-2', 'column-3', 'column-4'];
+    const idx = order.indexOf(current);
+    const ni = dir === 'forward' ? idx + 1 : idx - 1;
+    if (ni < 0 || ni >= order.length) return;
+    const newCol = order[ni];
+    const task = tasks[key];
+    const newEst = estadoForColumn[newCol];
     // Actualización optimista
     setColumns(prev => ({
       ...prev,
-      [currentColumn]: {
-        ...prev[currentColumn],
-        taskIds: prev[currentColumn].taskIds.filter(id => id !== taskKey)
-      },
-      [newColumn]: {
-        ...prev[newColumn],
-        taskIds: [...prev[newColumn].taskIds, taskKey]
-      }
+      [current]: { ...prev[current], taskIds: prev[current].taskIds.filter(i => i !== key) },
+      [newCol]: { ...prev[newCol], taskIds: [...prev[newCol].taskIds, key] },
     }));
-
     try {
-      const response = await fetch(`${API_BASE_URL}/kanban/${task.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ estado: newEstado }),
+      const res = await fetch(`${BASE_URL}/kanban/${task.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ estado: newEst }),
       });
-
-      if (!response.ok) throw new Error("Error actualizando estado");
-    } catch (error) {
-      console.error("Error moving task:", error);
-      await [fetchKanbanItems(),fetchPieData()];
-      showToast("Error al mover la tarea. Recuperando datos...", 'error');
+      if (!res.ok) throw new Error('Error actualizando estado');
+    } catch (err) {
+      console.error("Error moving task:", err);
+      showToast('Error al mover tarea. Recuperando datos...', 'error');
+      await fetchKanbanItems();
+      await fetchPie();
     }
     await fetchPieData();
   };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 p-6 relative">
       {/* Modal de confirmación */}
@@ -246,7 +211,7 @@ const fetchPieData = async () => {
                 Cancelar
               </button>
               <button
-                onClick={handleDeleteTask}
+                onClick={handleDelete}
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
               >
                 Eliminar
@@ -366,7 +331,7 @@ const fetchPieData = async () => {
                         <div className="mt-4 flex justify-between items-center">
                           <div className="flex gap-2">
                             <button
-                              onClick={() => handleMoveTask(taskKey, column.id as ColumnKey, "backward")}
+                              onClick={() => handleMove(taskKey, column.id as ColumnKey, "backward")}
                               disabled={column.id === "column-1"}
                               className={`px-3 py-1 rounded-md text-sm ${
                                 column.id === "column-1" 
@@ -378,7 +343,7 @@ const fetchPieData = async () => {
                               ←
                             </button>
                             <button
-                              onClick={() => handleMoveTask(taskKey, column.id as ColumnKey, "forward")}
+                              onClick={() => handleMove(taskKey, column.id as ColumnKey, "forward")}
                               disabled={column.id === "column-4"}
                               className={`px-3 py-1 rounded-md text-sm ${
                                 column.id === "column-4" 

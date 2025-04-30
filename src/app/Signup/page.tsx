@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
@@ -18,16 +19,6 @@ interface FormErrors {
   email?: string;
   password?: string;
   birthDate?: string;
-}
-
-interface InputProps {
-  label: string;
-  name: keyof FormData;
-  type?: string;
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  error?: string;
-  icon?: React.ReactNode;
 }
 
 export default function Signup() {
@@ -49,11 +40,14 @@ export default function Signup() {
 
     if (!firstName.trim()) newErrors.firstName = 'El nombre es obligatorio';
     if (!lastName.trim()) newErrors.lastName = 'El apellido es obligatorio';
-    if (!email.includes('@')) newErrors.email = 'Correo inválido';
-    if (password.length < 6) newErrors.password = 'Mínimo 6 caracteres';
+    if (email && !email.includes('@')) newErrors.email = 'Correo inválido';
+    if (password && password.length < 6) newErrors.password = 'Mínimo 6 caracteres';
 
-    const birthYear = new Date(birthDate).getFullYear();
-    if (!birthDate || birthYear < 1910 || birthYear > new Date().getFullYear()) {
+    if (birthDate) {
+      const year = new Date(birthDate).getFullYear();
+      const currentYear = new Date().getFullYear();
+      if (year < 1910 || year > currentYear) newErrors.birthDate = 'Fecha inválida';
+    } else {
       newErrors.birthDate = 'Fecha inválida';
     }
 
@@ -70,16 +64,7 @@ export default function Signup() {
     if (!validateForm()) return;
 
     try {
-      const isLocal =
-        typeof window !== 'undefined' &&
-        (window.location.hostname === 'localhost' ||
-          window.location.hostname === '127.0.0.1');
-
-      const API_BASE_URL = isLocal
-        ? 'http://localhost:3000'
-        : process.env.NEXT_PUBLIC_API_URL || '';
-
-      const response = await fetch(`${API_BASE_URL}/owners/signup`, {
+      const res = await fetch('https://api-crm-livid.vercel.app/owners/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -89,110 +74,68 @@ export default function Signup() {
           dob: formData.birthDate,
         }),
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
+      const data = await res.json();
+      if (!res.ok) {
         setErrorMessage(data.message || 'Error en el registro');
         return;
       }
-
       setSuccess(true);
-      setErrorMessage('');
       setTimeout(() => router.push('/login'), 2000);
-    } catch (error) {
-      console.error('Error:', error);
-      setErrorMessage('Error de conexión con el servidor');
+    } catch {
+      setErrorMessage('Error de conexión');
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center p-4">
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white shadow-md rounded-lg p-8 max-w-md w-full"
-      >
-        <h2 className="text-2xl font-bold mb-6 text-center">Registro</h2>
-        <div className="space-y-4">
-          <Input
-            label="Nombre"
-            name="firstName"
-            value={formData.firstName}
-            onChange={handleChange}
-            error={errors.firstName}
-          />
-          <Input
-            label="Apellido"
-            name="lastName"
-            value={formData.lastName}
-            onChange={handleChange}
-            error={errors.lastName}
-          />
-          <Input
-            label="Correo electrónico"
-            name="email"
-            type="email"
-            value={formData.email}
-            onChange={handleChange}
-            error={errors.email}
-          />
-          <Input
-            label="Contraseña"
-            name="password"
-            type="password"
-            value={formData.password}
-            onChange={handleChange}
-            error={errors.password}
-          />
-          <Input
-            label="Fecha de nacimiento"
-            name="birthDate"
-            type="date"
-            value={formData.birthDate}
-            onChange={handleChange}
-            error={errors.birthDate}
+    <div className="min-h-screen bg-blue-50 flex items-center justify-center p-6">
+      <div className="bg-white w-full max-w-md p-8 rounded-2xl shadow-xl border border-blue-200">
+        <div className="flex justify-center mb-6">
+          <Image
+            src="https://i.ibb.co/svQ1DTHd/IMG-4795.png"
+            alt="Logo DealTrack CRM"
+            width={100}
+            height={100}
           />
         </div>
-
-        {errorMessage && <p className="text-red-600 mt-4">{errorMessage}</p>}
-        {success && <p className="text-green-600 mt-4">¡Registro exitoso!</p>}
-
-        <button
-          type="submit"
-          className="mt-6 w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
-        >
-          Registrarse
-        </button>
-      </form>
-    </div>
-  );
-}
-
-function Input({ label, name, type = 'text', value, onChange, error, icon }: InputProps) {
-  return (
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1.5">{label}</label>
-      <div className="relative">
-        {icon && (
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            {icon}
-          </div>
-        )}
-        <input
-          type={type}
-          name={name}
-          value={value}
-          onChange={onChange}
-          className={`w-full px-4 py-3 ${
-            icon ? 'pl-10' : 'pl-4'
-          } pr-4 border ${
-            error
-              ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-              : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
-          } rounded-lg focus:ring-2 transition-all placeholder-gray-400`}
-        />
+        <h2 className="text-3xl font-bold text-center text-blue-600 mb-4">Crear cuenta</h2>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {['firstName','lastName','email','password','birthDate'].map((field,key) => {
+            const type = field === 'email' ? 'email' : field === 'password' ? 'password' : field === 'birthDate' ? 'date' : 'text';
+            const label = field === 'firstName' ? 'Nombre' : field === 'lastName' ? 'Apellido' : field === 'email' ? 'Correo electrónico' : field === 'password' ? 'Contraseña' : 'Fecha de nacimiento';
+            return (
+              <div key={key}>
+                <label className="block text-sm font-medium text-blue-700 mb-1">{label}</label>
+                <input
+                  type={type}
+                  name={field}
+                  value={(formData as any)[field]}
+                  onChange={handleChange}
+                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 transition ${errors[field as keyof FormErrors]? 'border-red-300' : 'border-gray-300'}`}
+                />
+                {errors[field as keyof FormErrors] && (
+                  <p className="text-red-500 text-xs mt-1">{errors[field as keyof FormErrors]}</p>
+                )}
+              </div>
+            );
+          })}
+          {errorMessage && <p className="text-red-600 text-center">{errorMessage}</p>}
+          {success && <p className="text-green-600 text-center">¡Registro exitoso!</p>}
+          <button
+            type="submit"
+            className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition"
+          >
+            Registrarse
+          </button>
+        </form>
+        <div className="text-center mt-4">
+          <button
+            onClick={() => router.push('/Login')}
+            className="text-blue-600 hover:underline"
+          >
+            ¿Ya tienes cuenta? Iniciar sesión
+          </button>
+        </div>
       </div>
-      {error && <p className="mt-1.5 text-sm text-red-600">{error}</p>}
     </div>
   );
 }
