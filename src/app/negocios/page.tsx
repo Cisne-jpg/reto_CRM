@@ -227,6 +227,7 @@ const fetchPieData = async () => {
       await [fetchKanbanItems(),fetchPieData()];
       showToast("Error al mover la tarea. Recuperando datos...", 'error');
     }
+    await fetchPieData();
   };
 
   return (
